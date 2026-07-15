@@ -12,7 +12,7 @@
       "name": "yo-skills",
       "source": "./",
       "description": "Personal agent skills library: reusable workflows for Claude Code, Codex, and Cursor.",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "author": {
         "name": "NARUTOne"
       },

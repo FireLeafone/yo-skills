@@ -10,7 +10,7 @@
 - [ ] **需求完整度：** 计划满足设计文档、用户意图和范围边界。
 - [ ] **计划遗漏：** 未发现明显遗漏或可执行性缺陷。
 - [ ] **外部审阅：** 已使用 [plan-document-reviewer-prompt.md](plan-document-reviewer-prompt.md) 派发审阅子代理，状态为"通过"。
-- [ ] **验证策略合理性：** 策略与执行方式匹配，对 `/yo subagent-development` 优先使用 `batched-verification`。
+- [ ] **验证策略合理性：** 策略与执行方式匹配，对 `/yo-dev subagent-development` 优先使用 `batched-verification`。
 
 ## 修复原则
 

@@ -54,7 +54,7 @@ flowchart TD
     N -->|是| H
     H --> P{还有任务?}
     P -->|是| B
-    P -->|否| Q[可选：最终审查] --> R[使用 /yo request-code-review]
+    P -->|否| Q[可选：最终审查] --> R[使用 /yo-dev request-code-review]
 ```
 
 ## 模型选择
