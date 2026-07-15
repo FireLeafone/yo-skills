@@ -1,0 +1,17 @@
+# <小说名>
+
+## 简介
+（待填写：一句话概括小说核心卖点）
+
+## 项目结构
+- `AGENTS.md` — AI Agent 操作指南
+- `progress.md` — 写作进度追踪
+- `presets/` — 大纲、人物、世界观、设定
+- `chapters/` — 小说正文
+- `count_words.py` — 字数统计脚本
+
+## 快速开始
+1. 填写 `presets/outline.md` 制定大纲。
+2. 填写 `presets/characters.md` 与 `presets/world.md`。
+3. 在 `chapters/` 下按 `001_章节名.md` 的格式创建章节。
+4. 运行 `python count_words.py` 统计字数。
