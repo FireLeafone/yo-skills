@@ -11,6 +11,7 @@ ai-novel-xxx/
 ├── checked.md                   # 章节结束后的检查清单：一致性检查、情节或人物异常冲突、时间混乱、常识错误等
 ├── rules.md                     # 写作规范要求（禁忌事项、写作风格要求、人物特性要点、小说主题、结尾悬念、场景切换等）
 ├── README.md                    # 项目说明
+├── references.md                # 参考资料
 ├── count_words.py               # 章节字数统计脚本、小说总字数
 ├── presets                      # 各种设定
     ├── outline.md               # 完整小说大纲

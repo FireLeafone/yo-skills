@@ -7,7 +7,7 @@
 
 ## 工作原则
 1. 优先读取 `rules.md` 了解写作规范，再读取 `presets/outline.md`、`presets/characters.md`、`presets/world.md` 等设定文件，了解小说设定。
-2. 写作前查看 `progress.md` 了解当前进度。
+2. 写作前查看 `progress.md` 了解当前进度；可查阅 `references.md` 获取参考资料与灵感。
 3. 新章节正文写入 `chapters/xxx_[章节名].md`，文件名保持顺序数字序号 + 章节名。
 4. 如果有设定调整，修改设定前先在 `presets/` 对应文件中更新，再同步到正文。
 5. 完成章节后更新 `progress.md` 的小说进度（章节、人物、大纲完成度等），并填写 `checked.md` 的章节检查清单。

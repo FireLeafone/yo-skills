@@ -37,6 +37,7 @@ When NOT to use:
    ├── rules.md
    ├── progress.md
    ├── checked.md
+   ├── references.md
    ├── README.md
    ├── count_words.py
    ├── presets/
@@ -68,6 +69,7 @@ When NOT to use:
 - `assets/README.md.template` → 项目 `README.md`
 - `assets/progress.md.template` → 项目 `progress.md`
 - `assets/checked.md.template` → 项目 `checked.md`
+- `assets/references.md.template` → 项目 `references.md`
 - `assets/presets/outline.md.template` → 项目 `presets/outline.md`
 - `assets/presets/characters.md.template` → 项目 `presets/characters.md`
 - `assets/presets/world.md.template` → 项目 `presets/world.md`
@@ -85,6 +87,7 @@ When NOT to use:
 - `rules.md` — 写作规范要求
 - `progress.md` — 进度追踪
 - `checked.md` — 章节检查清单
+- `references.md` — 参考资料、灵感、优秀小说作品等
 - `count_words.py` — 字数统计脚本
 - `presets/` — 大纲、人物、世界观、其他设定等
 - `chapters/` — 章节正文目录
@@ -98,6 +101,6 @@ When NOT to use:
 - 在创建前没有展示清单并等待用户确认 → 必须先确认再落盘。
 - 目标目录已存在却不提示用户 → 必须询问覆盖、合并还是中止。
 - 把正文直接写进 `presets/` 下 → 正文应放入 `chapters/`。
-- 遗漏 `count_words.py`、`AGENTS.md`、`rules.md` 或 `checked.md` → 按 Asset Files 完整复制。
+- 遗漏 `count_words.py`、`AGENTS.md`、`rules.md`、`checked.md` 或 `references.md` → 按 Asset Files 完整复制。
 - 没有从 `assets/` 复制模板，而是自行发挥重写 AGENTS.md / README.md / progress.md 等 → 这会破坏跨项目一致性，必须严格按模板输出。
 - 在模板外额外添加大量小说设定或剧情内容 → 初始化阶段只填充模板占位符，具体设定由用户后续填写。

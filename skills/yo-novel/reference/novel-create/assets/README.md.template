@@ -8,6 +8,7 @@
 - `rules.md` — 写作规范要求
 - `progress.md` — 写作进度追踪
 - `checked.md` — 章节结束后的检查清单
+- `references.md` — 参考资料与灵感
 - `presets/` — 大纲、人物、世界观、其他设定
 - `chapters/` — 小说正文
 - `count_words.py` — 字数统计脚本
@@ -16,6 +17,7 @@
 1. 填写 `presets/outline.md` 制定大纲。
 2. 填写 `presets/characters.md` 与 `presets/world.md`。
 3. 填写 `rules.md` 明确写作规范与禁忌事项。
-4. 在 `chapters/` 下按 `001_章节名.md` 的格式创建章节。
-5. 每章完成后更新 `progress.md` 与 `checked.md`。
-6. 运行 `python count_words.py` 统计字数。
+4. （可选）填写 `references.md` 记录参考资料与灵感。
+5. 在 `chapters/` 下按 `001_章节名.md` 的格式创建章节。
+6. 每章完成后更新 `progress.md` 与 `checked.md`。
+7. 运行 `python count_words.py` 统计字数。
