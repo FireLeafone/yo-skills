@@ -1,0 +1,22 @@
+{
+  "name": "yo-skills",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal agent skills library for Claude Code, Codex, and Cursor",
+  "scripts": {
+    "version:patch": "node scripts/version.js patch",
+    "version:minor": "node scripts/version.js minor",
+    "version:major": "node scripts/version.js major",
+    "skills:validate": "python scripts/validate-skills.py",
+    "skills:link": "python scripts/link-skills.py"
+  },
+  "keywords": [
+    "yo",
+    "yo-skills",
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "cursor"
+  ],
+  "license": "MIT"
+}

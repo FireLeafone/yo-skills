@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local agent config (do not commit)
+.agents/settings.local.json
+skills-lock.json
+
+# Build / temp
+dist/
+*.log
+
+# ai coding files

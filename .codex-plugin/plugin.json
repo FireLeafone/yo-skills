@@ -1,0 +1,30 @@
+{
+  "name": "yo-skills",
+  "version": "0.5.0",
+  "description": "Personal agent skills library: reusable workflows for Codex, Claude Code, and Cursor.",
+  "author": {
+    "name": "NARUTOne"
+  },
+  "homepage": "https://github.com/FireLeafone/yo-skills.git",
+  "repository": "https://github.com/FireLeafone/yo-skills.git",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "workflows",
+    "agent-skills",
+    "productivity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "yo-skills",
+    "shortDescription": "Personal agent skills for your development workflow",
+    "longDescription": "A curated collection of Agent Skills following the agentskills.io standard. Install as a Codex plugin or copy individual skills to your agent.",
+    "developerName": "NARUTOne",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ]
+  }
+}

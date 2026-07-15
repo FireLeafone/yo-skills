@@ -1,0 +1,32 @@
+{
+  "$schema": "https://code.claude.com/docs/schemas/marketplace.json",
+  "name": "yo-skills",
+  "description": "Personal agent skills library for Claude Code — yo, yo-analy, yo-ui",
+  "version": "1.0.0",
+  "owner": {
+    "name": "NARUTOne",
+    "email": "zhong.wu@brgroup.com"
+  },
+  "plugins": [
+    {
+      "name": "yo-skills",
+      "source": "./",
+      "description": "Personal agent skills library: reusable workflows for Claude Code, Codex, and Cursor.",
+      "version": "0.1.0",
+      "author": {
+        "name": "NARUTOne"
+      },
+      "homepage": "https://github.com/FireLeafone/yo-skills.git",
+      "repository": "https://github.com/FireLeafone/yo-skills.git",
+      "license": "MIT",
+      "keywords": [
+        "skills",
+        "workflows",
+        "agent-skills",
+        "productivity"
+      ],
+      "category": "Developer Tools",
+      "skills": "./skills/"
+    }
+  ]
+}
