@@ -102,3 +102,4 @@
 - [古风写作风格](./references/style-ancient.md)
 - [自然人声写作风格](./references/style-natural-voice.md)
 - [网文写作风格](./references/style-web-novel.md)
+- [历史类小说规则参考](./references/rule-history.md)
