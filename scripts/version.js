@@ -201,7 +201,8 @@ if (require.main === module) {
     const filesToUpdate = [
       path.join(process.cwd(), 'package.json'),
       path.join(process.cwd(), '.claude-plugin', 'plugin.json'),
-      path.join(process.cwd(), '.codex-plugin', 'plugin.json')
+      path.join(process.cwd(), '.codex-plugin', 'plugin.json'),
+      path.join(process.cwd(), '.kimi-plugin', 'plugin.json')
     ];
 
     console.log('Updating version in JSON files...');

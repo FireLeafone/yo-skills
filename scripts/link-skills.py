@@ -10,7 +10,16 @@ import sys
 from pathlib import Path
 
 SKIP_DIRS = {"_template", ".git", "node_modules", "__pycache__"}
-DEFAULT_SKILLS_SUBDIR = Path(".agents") / "skills"
+
+# Default skill subdirectories per agent, relative to the target project root.
+AGENT_SKILL_SUBDIRS: dict[str, Path] = {
+    "codex": Path(".agents") / "skills",
+    "cursor": Path(".cursor") / "skills",
+    "kimi": Path(".kimi") / "skills",
+    "claude": Path(".claude") / "skills",
+}
+DEFAULT_AGENT = "claude"
+DEFAULT_SKILLS_SUBDIR = AGENT_SKILL_SUBDIRS[DEFAULT_AGENT]
 
 
 def discover_skills(skills_root: Path) -> list[Path]:
@@ -136,10 +145,18 @@ def main() -> int:
         help="Path to yo-skills skills source directory",
     )
     parser.add_argument(
+        "--agent",
+        "-a",
+        type=str,
+        choices=list(AGENT_SKILL_SUBDIRS.keys()),
+        default=None,
+        help="Target agent (sets default skills-subdir): codex, cursor, kimi, claude",
+    )
+    parser.add_argument(
         "--skills-subdir",
         type=Path,
-        default=DEFAULT_SKILLS_SUBDIR,
-        help="Skills directory relative to the test project (default: .agents/skills)",
+        default=None,
+        help="Skills directory relative to the test project (overrides --agent default)",
     )
     parser.add_argument(
         "--force",
@@ -156,7 +173,13 @@ def main() -> int:
 
     skills_root = args.skills_dir.resolve()
     project_root = args.target.resolve()
-    skills_dest_root = project_root / args.skills_subdir
+
+    if args.skills_subdir:
+        skills_dest_root = project_root / args.skills_subdir
+    elif args.agent:
+        skills_dest_root = project_root / AGENT_SKILL_SUBDIRS[args.agent]
+    else:
+        skills_dest_root = project_root / DEFAULT_SKILLS_SUBDIR
 
     if not project_root.is_dir():
         print(f"Target project path not found: {project_root}", file=sys.stderr)

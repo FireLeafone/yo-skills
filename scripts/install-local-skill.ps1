@@ -6,6 +6,10 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$SkillName,
 
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("codex", "cursor", "kimi", "claude")]
+    [string]$Agent,
+
     [switch]$Force,
     [switch]$DryRun
 )
@@ -16,6 +20,9 @@ $linkScript = Join-Path $scriptDir "link-skills.py"
 $args = @("--target", $Target)
 if ($SkillName) {
     $args += @("--skill", $SkillName)
+}
+if ($Agent) {
+    $args += @("--agent", $Agent)
 }
 if ($Force) {
     $args += "--force"

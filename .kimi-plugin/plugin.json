@@ -1,0 +1,24 @@
+{
+  "name": "yo-skills",
+  "version": "1.0.0",
+  "description": "Personal agent skills library: reusable workflows for Kimi Code CLI, Claude Code, Codex, and Cursor.",
+  "author": {
+    "name": "NARUTOne"
+  },
+  "homepage": "https://github.com/FireLeafone/yo-skills.git",
+  "repository": "https://github.com/FireLeafone/yo-skills.git",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "workflows",
+    "agent-skills",
+    "productivity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "yo-skills",
+    "shortDescription": "Personal agent skills for your development workflow",
+    "longDescription": "A curated collection of Agent Skills following the agentskills.io standard. Install as a Kimi Code CLI plugin or copy individual skills to your agent.",
+    "developerName": "NARUTOne"
+  }
+}

@@ -2,7 +2,7 @@
   "name": "yo-skills",
   "version": "1.0.0",
   "private": true,
-  "description": "Personal agent skills library for Claude Code, Codex, and Cursor",
+  "description": "Personal agent skills library for Kimi Code CLI, Claude Code, Codex, and Cursor",
   "scripts": {
     "version:patch": "node scripts/version.js patch",
     "version:minor": "node scripts/version.js minor",
@@ -14,6 +14,7 @@
     "yo",
     "yo-skills",
     "agent-skills",
+    "kimi-code-cli",
     "claude-code",
     "codex",
     "cursor"
