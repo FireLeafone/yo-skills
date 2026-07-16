@@ -2,12 +2,13 @@
 
 一套适配个人/团队工作流的 **Agent Skills** 库，遵循 [Agent Skills 开放标准](https://agentskills.io/specification)。
 
-支持三种安装方式：
+支持四种安装方式：
 
 | 方式 | 适用场景 |
 |------|----------|
 | **Claude 插件** | 在 Claude Code 中一键安装整套 skills |
 | **Codex 插件** | 在 Codex CLI / App 中从插件市场安装 |
+| **Kimi Code CLI 插件** | 在 Kimi Code CLI 中通过 `/plugins install` 安装 |
 | **单独安装 skill** | 只装某一个 skill 到全局或项目目录 |
 
 ## 项目结构
@@ -18,6 +19,7 @@ yo-skills/
 │   ├── plugin.json              # Claude Code 插件清单
 │   └── marketplace.json         # Claude Code 插件市场注册表
 ├── .codex-plugin/plugin.json    # Codex 插件清单
+├── .kimi-plugin/plugin.json     # Kimi Code CLI 插件清单
 ├── templates/                   # 新建 skill 的模板（不参与校验/安装）
 ├── skills/                      # Skills 唯一源码目录（SSOT）
 │   └── xxx/                     # 本库 skills
@@ -82,7 +84,25 @@ claude --plugin-dir D:/xxx/ai/yo-skills
 
 Codex 通过 `.codex-plugin/plugin.json` 中的 `"skills": "./skills/"` 加载 skills。
 
-### 3. 单独安装 Skill
+### 3. Kimi Code CLI 插件模式
+
+**从插件市场或 GitHub 安装：**
+
+```bash
+/plugins install https://github.com/FireLeafone/yo-skills
+```
+
+或使用 `/plugins` 打开插件管理器，切换到 **Custom** 标签，粘贴仓库 URL 后安装。
+
+**本地开发调试：**
+
+```bash
+/plugins install D:/xxx/ai/yo-skills
+```
+
+安装后执行 `/reload` 或 `/new` 使插件生效。Kimi Code CLI 通过 `.kimi-plugin/plugin.json` 中的 `"skills": "./skills/"` 加载 skills。
+
+### 4. 单独安装 Skill
 
 **方式 A — npx skills CLI（推荐，跨平台）：**
 
@@ -103,6 +123,7 @@ npx skills list
 |-------|----------|----------|
 | Claude Code | `~/.claude/skills/` | — |
 | Codex | `~/.agents/skills/`、`~/.codex/skills/` | `.agents/skills/` |
+| Kimi Code CLI | `~/.kimi/skills/`、`$KIMI_CODE_HOME/skills/` | — |
 | Cursor | `~/.cursor/skills/` | `.cursor/skills/` |
 
 安装后**重启 agent 会话**以加载新 skill。
@@ -124,8 +145,10 @@ python scripts/validate-skills.py --skill xxx
 .\scripts\install-local-skill.ps1 -Target D:\path\to\your-project
 .\scripts\install-local-skill.ps1 -Target D:\path\to\your-project -SkillName test-skill
 .\scripts\install-local-skill.ps1 -Target D:\path\to\your-project -Force
+.\scripts\install-local-skill.ps1 -Target D:\path\to\your-project -Agent kimi
 npm run skills:link -- --target D:/path/to/your-project
 npm run skills:link -- --target D:/path/to/your-project --skill my-skill
+npm run skills:link -- --target D:/path/to/your-project --agent kimi
 ```
 
 编写规范详见 `templates/SKILL.md`。
@@ -151,6 +174,7 @@ npm run version:major
 - [Agent Skills 规范](https://agentskills.io/specification)
 - [Claude Code 插件结构](https://docs.anthropic.com/en/docs/claude-code/plugins)
 - [Codex Skills 文档](https://developers.openai.com/codex/skills/)
+- [Kimi Code CLI Plugins](https://www.kimi.com/code/docs/en/kimi-code-cli/customization/plugins.html)
 - [npx skills CLI](https://github.com/vercel-labs/skills)
 
 ## License
