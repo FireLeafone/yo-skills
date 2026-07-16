@@ -1,19 +1,19 @@
 ---
-name: yo
+name: yo-dev
 description: >
-  Yo 技能集合的入口索引。当用户输入 `/yo` 或提及 "yo" 时触发。
+  Yo 技能集合的入口索引。当用户输入 `/yo-dev` 或提及 "yo-dev" 时触发。
   用于根据用户意图自动匹配并调用对应的子技能。
-  用户可以通过 `/yo <子技能名> [target]` 显式指定，也可以只输入 `/yo` 由本技能自动推断最合适的子技能。
+  用户可以通过 `/yo-dev <子技能名> [target]` 显式指定，也可以只输入 `/yo-dev` 由本技能自动推断最合适的子技能。
 argument-hint: "[{{sub_skill}}] [target]"
 ---
 
-# Yo 技能索引
+# Yo Dev 技能索引
 
-Yo 是多个开发辅助技能的集合入口。根据你的需求，自动路由到最合适的子技能。
+Yo Dev 是多个开发辅助技能的集合入口。根据你的需求，自动路由到最合适的子技能。
 
 ## 可用子技能
 
-**可以使用 /yo help 列出下面所有子技能**
+**可以使用 /yo-dev help 列出下面所有子技能**
 
 | 子技能 | 路径 | 用途 | 典型触发语 |
 |--------|------|------|-----------|
@@ -53,22 +53,22 @@ flowchart LR
 
 ### 1. 显式指定（优先）
 
-如果用户输入包含 `/yo <子技能名>`，直接加载对应子技能：
+如果用户输入包含 `/yo-dev <子技能名>`，直接加载对应子技能：
 
-- `/yo to-prd ...` → 加载 `reference/to-prd/SKILL.md`
-- `/yo brainstorm ...` → 加载 `reference/brainstorm/SKILL.md`
-- `/yo impl-plans ...` → 加载 `reference/impl-plans/SKILL.md`
-- `/yo git-worktrees ...` → 加载 `reference/git-worktrees/SKILL.md`
-- `/yo subagent-development ...` → 加载 `reference/subagent-development/SKILL.md`
-- `/yo execute-plans ...` → 加载 `reference/execute-plans/SKILL.md`
-- `/yo request-code-review ...` → 加载 `reference/request-code-review/SKILL.md`
-- `/yo frontend-code-review ...` → 加载 `reference/frontend-code-review/SKILL.md`
+- `/yo-dev to-prd ...` → 加载 `reference/to-prd/SKILL.md`
+- `/yo-dev brainstorm ...` → 加载 `reference/brainstorm/SKILL.md`
+- `/yo-dev impl-plans ...` → 加载 `reference/impl-plans/SKILL.md`
+- `/yo-dev git-worktrees ...` → 加载 `reference/git-worktrees/SKILL.md`
+- `/yo-dev subagent-development ...` → 加载 `reference/subagent-development/SKILL.md`
+- `/yo-dev execute-plans ...` → 加载 `reference/execute-plans/SKILL.md`
+- `/yo-dev request-code-review ...` → 加载 `reference/request-code-review/SKILL.md`
+- `/yo-dev frontend-code-review ...` → 加载 `reference/frontend-code-review/SKILL.md`
 
-将 `/yo <子技能名>` 之后的剩余内容作为任务传递。
+将 `/yo-dev <子技能名>` 之后的剩余内容作为任务传递。
 
 ### 2. 自动推断
 
-如果用户只输入 `/yo` 或 `/yo <问题>` 但没有指定子技能名，根据用户意图推断：
+如果用户只输入 `/yo` 或 `/yo-dev <问题>` 但没有指定子技能名，根据用户意图推断：
 
 | 用户意图关键词 | 匹配子技能 |
 |--------------|-----------|
@@ -107,7 +107,7 @@ flowchart LR
 
 ## 工作流程
 
-1. **解析用户输入**：检查是否包含 `/yo <子技能名>` 的显式指定
+1. **解析用户输入**：检查是否包含 `/yo-dev <子技能名>` 的显式指定
 2. **匹配子技能**：
    - 显式指定 → 直接使用对应子技能
    - 未指定 → 根据意图关键词自动推断
