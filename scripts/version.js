@@ -49,6 +49,16 @@ function updateVersionInFiles(newVersion, filePaths) {
 
       const obj = JSON.parse(content);
       obj.version = newVersion;
+
+      // Marketplace manifests also carry a version per plugin entry
+      if (Array.isArray(obj.plugins)) {
+        for (const plugin of obj.plugins) {
+          if (plugin && typeof plugin === 'object' && 'version' in plugin) {
+            plugin.version = newVersion;
+          }
+        }
+      }
+
       fs.writeFileSync(filePath, JSON.stringify(obj, null, 2) + '\n');
     }
   } catch (err) {
@@ -72,7 +82,7 @@ function updateVersionInFiles(newVersion, filePaths) {
  * @param {string} changelogPath - Path to CHANGELOG.md
  */
 function generateChangelog(version, date, commits, changelogPath) {
-  const versionSection = `## ${version} (${date})\n\n${commits.map(c => `- ${c}`).join('\n')}\n`;
+  const versionSection = `## ${version} (${date})\n\n${commits.map(c => `- ${c}`).join('\n')}\n\n`;
 
   if (!fs.existsSync(changelogPath)) {
     const content = `# Changelog\n\n${versionSection}`;
@@ -90,7 +100,7 @@ function generateChangelog(version, date, commits, changelogPath) {
     fs.writeFileSync(changelogPath, newContent);
   } else {
     // No header found, prepend
-    fs.writeFileSync(changelogPath, `# Changelog\n\n${versionSection}\n${existingContent}`);
+    fs.writeFileSync(changelogPath, `# Changelog\n\n${versionSection}${existingContent.replace(/^\n+/, '')}`);
   }
 }
 
@@ -140,12 +150,35 @@ function getLastReleaseCommitHash() {
 }
 
 /**
+ * Collect commit subjects already recorded as entries in the changelog.
+ * @param {string} changelogPath - Path to CHANGELOG.md
+ * @returns {Set<string>} Set of recorded commit subjects
+ */
+function getChangelogEntries(changelogPath) {
+  if (!changelogPath || !fs.existsSync(changelogPath)) {
+    return new Set();
+  }
+
+  const entries = new Set();
+  for (const line of fs.readFileSync(changelogPath, 'utf8').split('\n')) {
+    const match = line.match(/^-\s+(.+?)\s*$/);
+    if (match) {
+      entries.add(match[1]);
+    }
+  }
+  return entries;
+}
+
+/**
  * Get git commit subjects since the last release point.
  * Priority: last git tag → last release commit → all commits (first release).
  * Release commits themselves are excluded from the result.
+ * @param {string} [changelogPath] - Path to CHANGELOG.md; when no tag or
+ *   release commit marks the previous release, already-recorded commits
+ *   are dropped to avoid duplicate entries
  * @returns {string[]} Array of commit subject lines
  */
-function getCommitsSinceLastTag() {
+function getCommitsSinceLastTag(changelogPath) {
   try {
     const tagList = execSync('git tag -l', { encoding: 'utf8', stdio: 'pipe' }).trim();
     const hasTags = tagList.length > 0;
@@ -170,9 +203,20 @@ function getCommitsSinceLastTag() {
       return [];
     }
 
-    return output
+    const subjects = output
       .split('\n')
       .filter(subject => !isReleaseCommit(subject));
+
+    // Without a tag or release commit there is no cutoff point, so drop
+    // commits already recorded in the changelog to avoid duplicate entries.
+    if (!rangeStart) {
+      const recorded = getChangelogEntries(changelogPath);
+      if (recorded.size > 0) {
+        return subjects.filter(subject => !recorded.has(subject.trim()));
+      }
+    }
+
+    return subjects;
   } catch (err) {
     return [];
   }
@@ -201,6 +245,7 @@ if (require.main === module) {
     const filesToUpdate = [
       path.join(process.cwd(), 'package.json'),
       path.join(process.cwd(), '.claude-plugin', 'plugin.json'),
+      path.join(process.cwd(), '.claude-plugin', 'marketplace.json'),
       path.join(process.cwd(), '.codex-plugin', 'plugin.json'),
       path.join(process.cwd(), '.kimi-plugin', 'plugin.json')
     ];
@@ -210,8 +255,8 @@ if (require.main === module) {
     console.log('  done');
 
     const today = new Date().toISOString().split('T')[0];
-    const commits = getCommitsSinceLastTag();
     const changelogPath = path.join(process.cwd(), 'CHANGELOG.md');
+    const commits = getCommitsSinceLastTag(changelogPath);
 
     console.log(`Generating CHANGELOG.md with ${commits.length} commit(s)...`);
     generateChangelog(newVersion, today, commits, changelogPath);
@@ -230,5 +275,6 @@ module.exports = {
   generateChangelog,
   isReleaseCommit,
   getLastReleaseCommitHash,
+  getChangelogEntries,
   getCommitsSinceLastTag
 };
