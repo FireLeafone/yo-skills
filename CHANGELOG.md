@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 (2026-07-17)
+
+- feat: update yo-analy
+- fix: version sync
+- feat: skill-optimizer add
+- feat: add yo-life travel-planner
+- chore: update log
+
 ## 1.0.0 (2026-07-16)
 
 - feat: add kimi support
