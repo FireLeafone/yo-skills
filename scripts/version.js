@@ -49,6 +49,16 @@ function updateVersionInFiles(newVersion, filePaths) {
 
       const obj = JSON.parse(content);
       obj.version = newVersion;
+
+      // Marketplace manifests also carry a version per plugin entry
+      if (Array.isArray(obj.plugins)) {
+        for (const plugin of obj.plugins) {
+          if (plugin && typeof plugin === 'object' && 'version' in plugin) {
+            plugin.version = newVersion;
+          }
+        }
+      }
+
       fs.writeFileSync(filePath, JSON.stringify(obj, null, 2) + '\n');
     }
   } catch (err) {
@@ -201,6 +211,7 @@ if (require.main === module) {
     const filesToUpdate = [
       path.join(process.cwd(), 'package.json'),
       path.join(process.cwd(), '.claude-plugin', 'plugin.json'),
+      path.join(process.cwd(), '.claude-plugin', 'marketplace.json'),
       path.join(process.cwd(), '.codex-plugin', 'plugin.json'),
       path.join(process.cwd(), '.kimi-plugin', 'plugin.json')
     ];
