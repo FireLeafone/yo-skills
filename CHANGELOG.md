@@ -1,2 +1,15 @@
 # Changelog
 
+## 1.0.0 (2026-07-16)
+
+- feat: add kimi support
+- feat: add nover-progress
+- feat: add novel-write
+- feat: add novel-design skill
+- feat: update ideas, novel-create skill
+- feat: update ideas, novel-create skill
+- feat: init novel-xx
+- feat: add novel-create
+- feat: yo-dev
+- feat: init yo-novel
+- feat: init commit
