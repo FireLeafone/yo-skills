@@ -1,5 +1,7 @@
 # roadbook-v2 交付细则
 
+> 路径约定：本文所有 `scripts/`、`assets/` 相对路径均以本 skill 目录（travel-planner/）为基准。脚本经 `Path(__file__)` 自定位，任意 cwd 下用正确路径调用即可执行。
+
 ## 1. 交付流水线全景
 
 `scripts/deliver_roadbook_v2.py` 按固定顺序串联（`--dry-run` 可只打印不执行）：
@@ -26,7 +28,7 @@
 ## 3. 每日正文 enrich
 
 - 目标 **120–280 字**，顾问文风，紧扣当日真实节点；不新增素材外景点或承诺。
-- 配置 `OPENAI_API_KEY` 或 `DEEPSEEK_API_KEY`（仓库根 `.env`，`scripts/repo_dotenv.py` 自动加载）时经 OpenAI 兼容 Chat Completions 统一文风；否则以 `overview` + 飞猪/维基洁净句合成。
+- 配置 `OPENAI_API_KEY` 或 `DEEPSEEK_API_KEY`（本 skill 目录 `.env`，与 `scripts/` 同级，`scripts/repo_dotenv.py` 自动加载）时经 OpenAI 兼容 Chat Completions 统一文风；否则以 `overview` + 飞猪/维基洁净句合成。
 - deliver 参数：`--no-daily-force`（保留旧稿）、`--daily-no-llm`（禁用 LLM）、`--skip-daily-enrich`（整步跳过）、`--daily-min-chars`（默认 200）。
 - DeepSeek 专用变量与示例见 `docs/deepseek-llm-setup.md`。
 
@@ -103,10 +105,10 @@ python3 scripts/roadbook_intake.py --input <brief.txt|brief.docx> --output-dir <
 
 ## 10. 酒店数据源顺序（交付口径）
 
+信息与图片的来源顺序口径同 `../SKILL.md`「数据源优先级」表，此处仅补充交付侧报价口径：
+
 | 用途 | 顺序 |
 |------|------|
-| 酒店信息（全称/介绍/房型/设施/评分） | 携程 → 飞猪（FlyAI `search-hotels`）→ 通用搜索（标注「参考/待核验」）→ 人工 |
-| 酒店图片 | 携程 → 飞猪 → 小红书（实拍补充）→ 人工 → 通用图库 → 兜底 |
 | 指定日期报价 | FlyAI 传日期返回 `price` 可标「实查」；未传日期或仅搜索结果的标「参考价」 |
 
 常用命令：

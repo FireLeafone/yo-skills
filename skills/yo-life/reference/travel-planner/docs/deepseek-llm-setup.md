@@ -6,13 +6,13 @@
 
 ## 方式 A：专用环境变量（推荐）
 
-只需 DeepSeek 时，在 shell 或 **仓库根目录 `.env`** 中设置（`deliver_roadbook_v2.py` 与 `enrich_daily_descriptions_from_xhs.py` 启动时会自动加载 `.env`，**不覆盖**已在环境里 export 的同名变量）：
+只需 DeepSeek 时，在 shell 或 **本 skill 目录的 `.env`**（travel-planner/，与 `scripts/` 同级）中设置（`deliver_roadbook_v2.py` 与 `enrich_daily_descriptions_from_xhs.py` 启动时会自动加载 `.env`，**不覆盖**已在环境里 export 的同名变量）：
 
 ```bash
 export DEEPSEEK_API_KEY="sk-……"
 ```
 
-或写入 **项目根** 的 `.env` 文件（与 `scripts/` 同级）：
+或写入 `.env` 文件（位置同上，与 `scripts/` 同级）：
 
 ```env
 DEEPSEEK_API_KEY=sk-……
@@ -73,7 +73,7 @@ python3 scripts/enrich_daily_descriptions_from_xhs.py \
 
 | 现象 | 建议 |
 |------|------|
-| 仍显示「未设置 … 顾问合成」 | 确认仓库根有 `.env` 且含 `DEEPSEEK_API_KEY=` 一行；或已在终端 `export`；路径须与 `scripts/` 同级（不是路书子目录）。 |
+| 仍显示「未设置 … 顾问合成」 | 确认本 skill 目录（travel-planner/，与 `scripts/` 同级，不是路书子目录，也不是用户项目根）有 `.env` 且含 `DEEPSEEK_API_KEY=` 一行；或已在终端 `export`。 |
 | HTTP 401 | Key 错误或过期。 |
 | HTTP 400 / 模型不存在 | 检查 `DEEPSEEK_MODEL` / `--llm-model` 是否与控制台文档一致。 |
 

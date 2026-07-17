@@ -4,7 +4,7 @@ description: >
   面向旅行顾问与定制游服务商的旅行策划与路书交付 Skill。把简版行程资料（文本/截图/文档/XLS）解析为结构化
   tripData.json，并默认自动执行交付级流水线（每日正文润色 → 亮点/费用/服务 LLM → 住宿飞猪简介 → 小红书
   strict 配图 → 校验 → HTML/PDF），产出可直接交付客户的 roadbook-v2 路书；亦支持目的地推荐、多维信息采集、
-  行程编排与预算编制。当用户提到旅行计划、行程规划、路书、roadbook、行程单、报价单、定制游方案时使用。
+  行程编排与预算编制。当用户提到旅行计划、行程规划、路书、roadbook、行程单、报价单、定制游方案时使用；不用于实时订票/改签、签证、汇率查询类请求。
 ---
 
 # Travel Planner · 旅行策划与路书交付
@@ -22,7 +22,7 @@ description: >
 
 ## 硬性规则（违反即视为未完成）
 
-1. **默认跑交付流水线**：`tripData.json` 就绪后，在仓库根执行 `scripts/deliver_roadbook_v2.py`。**禁止**问用户「要不要完整交付 / 补图 / 校验 / 跑小红书」。
+1. **默认跑交付流水线**：`tripData.json` 就绪后，执行本 skill 的 `scripts/deliver_roadbook_v2.py`（脚本经 `Path(__file__)` 自定位，任意 cwd 可用，路径写法见下方一键命令）。**禁止**问用户「要不要完整交付 / 补图 / 校验 / 跑小红书」。
 2. **日期写死**：deliver 必须带 `--check-in` / `--check-out`（客户首晚入住/离店）。缺日期时最少字数追问日期，不问「要不要交付」。
 3. **默认 strict 配图**：不加 `--allow-local-placeholders`；配图必须 https 远端 URL。小红书接口异常时流水线自动降级仍生成 HTML，但须在回复中注明降级、提醒人工核对配图与正文。
 4. **文案每次重写**：住宿简介（`--hotel-force` 默认开）、每日正文、亮点/费用/服务均默认 `--force` 重跑；仅当需保留已达字数旧稿时才加 `--no-hotel-force` / `--no-daily-force` / `--no-copy-llm-force`。
@@ -34,8 +34,8 @@ description: >
 ### 交付（默认）
 
 ```bash
-cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-python3 scripts/deliver_roadbook_v2.py \
+# SKILL_DIR = 本 SKILL.md 所在目录（随安装位置而定，如 .agents/skills/yo-life/reference/travel-planner）
+python3 "$SKILL_DIR/scripts/deliver_roadbook_v2.py" \
   "路书目录/tripData.json" \
   "路书目录/路书名.html" \
   --check-in YYYY-MM-DD \
@@ -49,7 +49,7 @@ python3 scripts/deliver_roadbook_v2.py \
 ### 录入（简表 → tripData 首版）
 
 ```bash
-python3 scripts/roadbook_intake.py --input <brief.txt|brief.docx> --output-dir <目的地-年月> \
+python3 "$SKILL_DIR/scripts/roadbook_intake.py" --input <brief.txt|brief.docx> --output-dir <目的地-年月> \
   [--render --html-name 路书名.html]
 ```
 
@@ -95,7 +95,7 @@ Intake 的 `--render` 只产首版，**对客户交付仍须再跑上面的 deli
 
 ## 环境与依赖
 
-- 仓库根 `.env`（deliver 启动时自动加载）：`TIKHUB_API_KEY`（小红书搜索/配图，strict 交付必需）；`OPENAI_API_KEY` 或 `DEEPSEEK_API_KEY`（可选 LLM 润色，配置见 `docs/deepseek-llm-setup.md`）。
+- 本 skill 目录下 `.env`（与 `scripts/` 同级，deliver 启动时经 `Path(__file__)` 自动加载，与用户 cwd 无关；不要放到用户项目根）：`TIKHUB_API_KEY`（小红书搜索/配图，strict 交付必需）；`OPENAI_API_KEY` 或 `DEEPSEEK_API_KEY`（可选 LLM 润色，配置见 `docs/deepseek-llm-setup.md`）。
 - 可选 CLI：`flyai`（`npm i -g @fly-ai/flyai-cli`，飞猪机票/酒店/门票/交通配图实时数据）。
 - TikHub 异常：先查 `.env` 密钥与账户余额再重跑；策划阶段全程可用网络搜索兜底。
 
