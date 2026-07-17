@@ -2,7 +2,7 @@
   "$schema": "https://code.claude.com/docs/schemas/marketplace.json",
   "name": "yo-skills",
   "description": "Personal agent skills library for Claude Code — yo, yo-analy, yo-ui",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "owner": {
     "name": "NARUTOne",
     "email": "zhong.wu@brgroup.com"
@@ -12,7 +12,7 @@
       "name": "yo-skills",
       "source": "./",
       "description": "Personal agent skills library: reusable workflows for Claude Code, Codex, and Cursor.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "NARUTOne"
       },
