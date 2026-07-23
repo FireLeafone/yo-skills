@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0 (2026-07-23)
+
+- feat: add novel-chapters
+- feat: update novel template
+
 ## 1.1.1 (2026-07-17)
 
 - feat: update travel-planner
