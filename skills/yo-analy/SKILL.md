@@ -129,7 +129,3 @@ flowchart LR
 - 本技能本身不执行具体任务，只负责路由到正确的子技能
 - 子技能在 `reference/` 目录下
 - 子技能的详细工作流程和规则，请参考各自的 SKILL.md
-- **grill-me** 须逐一提问，不得一次抛出所有问题；能通过查看代码库解答的问题应直接查证
-- **extract-chat** 输出路径为 `docs/yo-analy/YYYY-MM-DD-<topic>-chat.md`，须含「建议技能」章节，引用已有 PRD/计划等而非重复，并剔除 API 密钥等敏感信息
-- **extract-chat** 若用户传入参数，视为对下次会话重点的说明，据此调整文档侧重点
-- **skill-optimizer** 须先审查、输出优化计划并等待用户确认，未确认前不得修改目标 skill

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0 (2026-07-31)
+
+- feat: add rm-ai-style; update yo-xx skill
+- feat: optimizer brainstorm
+
 ## 1.2.0 (2026-07-23)
 
 - feat: add novel-chapters

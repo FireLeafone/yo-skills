@@ -119,8 +119,3 @@ flowchart LR
 - 本技能本身不执行具体任务，只负责路由到正确的子技能
 - 子技能在 `reference/` 目录下
 - 子技能的详细工作流程和规则，请参考各自的 SKILL.md
-- **to-prd** 有探索门槛：编写 PRD 前须至少提出两个澄清问题，不得跳过访谈阶段；输出须遵循子技能中的 PRD 章节结构（执行摘要、用户体验、AI 需求、技术规范、风险路线图）
-- **brainstorm** 有 HARD-GATE：展示设计并获得用户批准前，不得编写代码或调用实施技能
-- **to-prd** 与 **brainstorm** 均偏需求阶段：前者产出正式 PRD，后者侧重交互式设计与规格探索；二者可串联，勿与 **impl-plans** 混淆（实现计划面向开发任务拆解）
-- **execute-plans** 与 **subagent-development** 功能重叠：前者适合独立会话，后者适合当前会话 + 子代理平台
-- **request-code-review** 常在 **subagent-development** 或 **execute-plans** 完成后自动衔接调用
