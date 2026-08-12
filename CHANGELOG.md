@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1 (2026-08-12)
+
+- feat: ai-style rm brand voice
+- feat: optimizer ai-style
+- feat: update
+- feat: release 1.30
+- feat: add rm-ai-style; update yo-xx skill
+- feat: optimizer brainstorm
+
 ## 1.3.0 (2026-07-31)
 
 - feat: add rm-ai-style; update yo-xx skill
