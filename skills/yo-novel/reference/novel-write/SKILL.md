@@ -4,7 +4,7 @@ description: >
   根据小说大纲与设定，撰写或续写单章正文内容（Markdown 格式，2000-4000 字）。
   只要用户想产出小说章节正文，就应该优先使用本 skill：包括"写第 X 章"、"帮我写一章"、"续写小说"、
   "开始写正文"、"继续写"、"novel chapter"、"write chapter"、"continue novel"、"next chapter" 等。
-  适用于已有小说项目、需要基于 presets/ 中的设计文档产出 chapters/ 下正文的场景；
+  适用于已有小说项目、需要基于 presets/ 中的设定文档产出 chapters/ 下正文的场景；
   不适用于从零创建项目（使用 novel-create）或只做前期设计规划（使用 novel-design）。
 ---
 
@@ -127,7 +127,7 @@ When NOT to use:
 
 ### 9. Review 检查清单
 
-写完后逐条自查：
+写完后，如果存在`checked.md`, 可以按照检查文档检查，没有则按下面逐条自查：
 
 - [ ] 字数在 2000-4000 之间。
 - [ ] 没有出现"（待补充）"、"（略）"等占位符。
@@ -138,6 +138,7 @@ When NOT to use:
 - [ ] 关键伏笔已埋下或回收，且逻辑通顺。
 - [ ] 对话、动作、表情描写足够，没有大量直接陈述。
 - [ ] 章节末尾有适当的情绪落点或下一章钩子。
+- [ ] 减少、移除AI味，参考 `references/rm-ai-style.md`
 
 如发现问题，先修正后再保存。
 
@@ -153,7 +154,7 @@ When NOT to use:
 - `references/style-guide.md` — 内置写作风格说明与选择建议
 - `references/writing-techniques.md` — 叙事视角、场景构建、对话、节奏等技巧
 - `references/style-ancient.md` — 古风写作风格
-- `references/style-natural-voice.md` — 自然人声写作风格
+- `references/rm-ai-style.md` — 去 AI 味
 - `references/style-web-novel.md` — 网文写作风格
 - `references/rule-history.md` — 历史类小说规则参考
 
