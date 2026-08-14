@@ -1,0 +1,2 @@
+timestamp	commit	skill	old_score	new_score	status	dimension	note	eval_mode
+2026-08-14T00:00	0d7c5eb	novel-write	-	72.1	baseline	-	初始评估 dim5/dim3/dim4短板; runtime绿灯	dry_run
