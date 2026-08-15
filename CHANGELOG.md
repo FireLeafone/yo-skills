@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.0 (2026-08-15)
+
+- chore: github update to gitee
+- feat: mv github to gitee
+
 ## 1.3.1 (2026-08-12)
 
 - feat: ai-style rm brand voice
