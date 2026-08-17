@@ -89,6 +89,7 @@ Codex 通过 `.codex-plugin/plugin.json` 中的 `"skills": "./skills/"` 加载 s
 **从插件市场或 GitHub 安装：**
 
 ```bash
+# kimi code 不支持来源gitee，只支持github
 /plugins install https://github.com/FireLeafone/yo-skills
 ```
 
