@@ -21,7 +21,6 @@ from explain_book.config import (
     SUPPORTED_EXTENSIONS,
     TEXT_EXTENSIONS,
     HTML_EXTENSIONS,
-    CALIBRE_EBOOK_EXTENSIONS,
     supported_formats_message,
 )
 from explain_book.dependencies import (
@@ -33,7 +32,6 @@ from explain_book.parsers.text import read_text_file
 from explain_book.parsers.html import extract_html_file
 from explain_book.parsers.docx import extract_docx
 from explain_book.parsers.rtf import extract_rtf
-from explain_book.parsers.calibre import extract_with_ebook_convert
 from explain_book.parsers.pdf import (
     extract_with_docling,
     extract_with_pdftotext,
@@ -41,11 +39,6 @@ from explain_book.parsers.pdf import (
     extract_with_pdfminer,
     looks_image_only,
     count_pages,
-)
-from explain_book.parsers.epub import (
-    extract_with_ebooklib,
-    extract_with_zipfile,
-    count_epub_chapters,
 )
 from explain_book.sanitize import sanitize_extracted_text
 
@@ -523,7 +516,7 @@ def resolve_input_files(paths: list[str]) -> list[Path]:
     runs produce the same output.
 
     A leading "~" is expanded here rather than relying on the shell: a glob has
-    to be quoted to reach us unexpanded ("~/books/*.epub"), and quoting stops
+    to be quoted to reach us unexpanded ("~/books/*.pdf"), and quoting stops
     the shell expanding the tilde too. `glob.glob` and `Path` both treat "~" as
     a literal directory name, so without this the pattern silently matches
     nothing.
@@ -604,10 +597,7 @@ def extract_single_file(input_path: Path, extraction_mode: str, install_mode: st
             try:
                 with zipfile.ZipFile(input_str) as zf:
                     names = set(zf.namelist())
-                    if "mimetype" in names and zf.read("mimetype").startswith(b"application/epub"):
-                        ext = ".epub"
-                        document_format = "epub"
-                    elif "word/document.xml" in names:
+                    if "word/document.xml" in names:
                         ext = ".docx"
                         document_format = "docx"
                     else:
@@ -624,40 +614,13 @@ def extract_single_file(input_path: Path, extraction_mode: str, install_mode: st
             )
             
     prepare_dependencies(ext, extraction_mode, install_mode)
-    
-    if ext in CALIBRE_EBOOK_EXTENSIONS and not shutil.which("ebook-convert"):
-        raise ExtractionError(
-            "MOBI/AZW/AZW3 extraction requires Calibre's ebook-convert command. "
-            "Install Calibre and ensure ebook-convert is on PATH, then rerun this command."
-        )
-        
+
     text = ""
     method = ""
     pages = 0
     pages_label = "sections"
-    
-    if ext == ".epub":
-        print(f"Extracting EPUB: {input_str}")
-        text = extract_with_ebooklib(input_str)
-        if text and text.strip():
-            method = "ebooklib"
-        else:
-            print("ebooklib not available")
-            print("Trying stdlib zipfile parser...", end=" ", flush=True)
-            text = extract_with_zipfile(input_str)
-            if text and text.strip():
-                print("OK")
-                method = "zipfile"
-            else:
-                print("FAILED")
-                raise ExtractionError(
-                    "Could not extract text from EPUB.\n"
-                    "Install ebooklib + beautifulsoup4 for best results:\n"
-                    "  pip3 install ebooklib beautifulsoup4"
-                )
-        pages = count_epub_chapters(input_str)
-        pages_label = "spine_items"
-    elif ext == ".pdf":
+
+    if ext == ".pdf":
         print(f"Extracting PDF: {input_str}")
         if looks_image_only(input_str):
             raise ExtractionError(
@@ -737,16 +700,6 @@ def extract_single_file(input_path: Path, extraction_mode: str, install_mode: st
         text, method = extract_rtf(input_str)
         pages = 0
         pages_label = "sections"
-    elif ext in CALIBRE_EBOOK_EXTENSIONS:
-        print(f"Extracting ebook with Calibre: {input_str}")
-        text = extract_with_ebook_convert(input_str)
-        if text is None or not text.strip():
-            raise ExtractionError(
-                f"Could not extract text from {ext}. Install Calibre and ensure ebook-convert is on PATH."
-            )
-        method = "ebook-convert"
-        pages = 0
-        pages_label = "sections"
 
     text, removed_invisible = sanitize_extracted_text(text)
     if removed_invisible:
@@ -820,7 +773,7 @@ def print_intro() -> None:
     is vendored from.
     """
     sys.stderr.write(
-        "explain-book · parses a book into a structured knowledge-base skill\n"
+        "explain-book · parses a book into a structured document set (Markdown)\n"
         "extraction engine vendored from book-to-skill (MIT) · "
         "github.com/virgiliojr94/book-to-skill\n\n"
     )

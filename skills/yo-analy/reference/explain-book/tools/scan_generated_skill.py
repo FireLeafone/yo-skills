@@ -160,14 +160,19 @@ def _walk_markdown(directory: Path) -> list[Path]:
 def unscanned_markdown(path: Path) -> list[str]:
     """Markdown files present in the skill directory but outside the scan scope.
 
-    The scope is deliberately bounded to what explain-book generates (SKILL.md,
-    the supporting files, and ``chapters/``), so unrelated notes in the directory
-    are not scanned and cannot raise false findings. The risk is the *reporting*:
-    printing "scan passed" while files the agent will happily read went unopened
-    is a false assurance. Listing them keeps the bounded scope honest.
+    The scope is deliberately bounded to what explain-book generates (SKILL.md
+    or README.md, the supporting files, and ``chapters/``), so unrelated notes
+    in the directory are not scanned and cannot raise false findings. The risk
+    is the *reporting*: printing "scan passed" while files the agent will
+    happily read went unopened is a false assurance. Listing them keeps the
+    bounded scope honest.
     """
     requested = path.expanduser()
-    root = (requested.parent if requested.name.lower() == "skill.md" else requested)
+    root = (
+        requested.parent
+        if requested.name.lower() in ("skill.md", "readme.md")
+        else requested
+    )
     root = root.resolve(strict=True)
     scanned = set(_collect_skill_files(requested))
     return sorted(
@@ -179,7 +184,7 @@ def unscanned_markdown(path: Path) -> list[str]:
 
 def _collect_skill_files(skill_dir: Path) -> list[Path]:
     requested = skill_dir.expanduser()
-    if requested.name.lower() == "skill.md" and requested.is_file():
+    if requested.name.lower() in ("skill.md", "readme.md") and requested.is_file():
         requested = requested.parent
     if requested.is_symlink():
         raise ScanError("the generated skill directory must not be a symbolic link")
@@ -191,8 +196,17 @@ def _collect_skill_files(skill_dir: Path) -> list[Path]:
         raise ScanError("the generated skill path is not a directory")
 
     master = root / "SKILL.md"
-    if not master.is_file() or master.is_symlink():
-        raise ScanError("SKILL.md is missing or is a symbolic link")
+    if master.is_symlink():
+        raise ScanError("SKILL.md must be a real file, not a symbolic link")
+    if not master.is_file():
+        # explain-book now emits plain document sets whose master document is
+        # README.md rather than an installable SKILL.md; accept either layout.
+        master = root / "README.md"
+        if master.is_symlink() or not master.is_file():
+            raise ScanError(
+                "neither SKILL.md nor README.md found as a real file in the "
+                "generated directory"
+            )
 
     candidates = {master}
     for filename in SUPPORTING_FILENAMES:

@@ -19,19 +19,16 @@ CJK_CHARS_PER_TOKEN = 1.5  # approximate for cl100k-style tokenizers
 
 TEXT_EXTENSIONS = {".txt", ".text", ".md", ".markdown", ".rst", ".adoc", ".asciidoc"}
 HTML_EXTENSIONS = {".html", ".htm", ".xhtml"}
-CALIBRE_EBOOK_EXTENSIONS = {".mobi", ".azw", ".azw3"}
 SUPPORTED_EXTENSIONS = {
-    ".pdf", ".epub", ".docx", ".rtf",
+    ".pdf", ".docx", ".rtf",
     *TEXT_EXTENSIONS,
     *HTML_EXTENSIONS,
-    *CALIBRE_EBOOK_EXTENSIONS,
 }
 
 PYTHON_DEPENDENCIES = {
     "docling": "docling",
     "pypdf": "pypdf",
     "pdfminer": "pdfminer.six",
-    "ebooklib": "ebooklib",
     "bs4": "beautifulsoup4",
     "docx": "python-docx",
     "striprtf": "striprtf",

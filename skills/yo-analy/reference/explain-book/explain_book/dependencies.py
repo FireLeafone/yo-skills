@@ -30,13 +30,6 @@ DEPENDENCY_GROUPS = [
         "note": "needed only for --mode technical; otherwise falls back to the text chain",
     },
     {
-        "label": "EPUB",
-        "modules": ["ebooklib", "bs4"],
-        "any_of_modules": False,
-        "system": [],
-        "note": "falls back to a stdlib zipfile parser if missing",
-    },
-    {
         "label": "DOCX",
         "modules": ["docx"],
         "any_of_modules": True,
@@ -56,16 +49,6 @@ DEPENDENCY_GROUPS = [
         "any_of_modules": True,
         "system": [],
         "note": "falls back to a basic regex cleanup if missing",
-    },
-    {
-        "label": "MOBI / AZW / AZW3",
-        "modules": [],
-        "any_of_modules": True,
-        "required": True,
-        "system": [
-            ("ebook-convert", "Calibre", "install Calibre: https://calibre-ebook.com/download"),
-        ],
-        "note": "no fallback — Calibre is required for these formats",
     },
 ]
 
@@ -208,14 +191,6 @@ def prepare_dependencies(ext: str, extraction_mode: str, install_mode: str) -> N
             install_mode=install_mode,
         )
 
-    if ext == ".epub":
-        offer_dependency_install(
-            feature="EPUB extraction",
-            module_names=["ebooklib", "bs4"],
-            fallback="a stdlib ZIP/HTML parser",
-            install_mode=install_mode,
-        )
-
     if ext in HTML_EXTENSIONS:
         offer_dependency_install(
             feature="HTML extraction",
@@ -314,7 +289,7 @@ def run_dependency_check() -> int:
     for pretty, hint in missing_system:
         print(f"  # {pretty}: {hint}")
     print(
-        "\nNote: missing Python packages are optional — most formats fall back to a "
-        "stdlib parser. Calibre is the only hard requirement, and only for MOBI/AZW files."
+        "\nNote: missing Python packages are optional — every format falls back "
+        "to a stdlib parser or an alternative extractor."
     )
     return 0

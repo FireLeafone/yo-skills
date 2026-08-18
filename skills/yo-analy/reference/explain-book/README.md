@@ -1,6 +1,6 @@
 # explain-book
 
-**把书籍解析为结构化知识库 skill：框架大纲、设定（人物/等级/社会/环境）、心智模型、原则、写作风格、技巧与反模式 —— 虚构与非虚构自动路由。**
+**把书籍解析为结构化解析文档集：框架大纲、设定（人物/等级/社会/环境）、心智模型、原则、写作风格、技巧与反模式 —— 虚构与非虚构自动路由。产出是普通 markdown 文档目录。**
 
 本项目是 [book-to-skill](https://github.com/virgiliojr94/book-to-skill) 的衍生改造：沿用了它的"提取结构，不写摘要"哲学与完整工作流，但把提取维度从"技术书方法论"扩展为双路由：
 
@@ -11,11 +11,11 @@
 
 两者都会生成 `outline.md`（框架大纲）、`writing-style.md`、`techniques.md`、`anti-patterns.md`、`glossary.md` 与逐章解析文件，全部按需加载。
 
-## 生成的知识库长什么样
+## 生成的解析文档集长什么样
 
 ```
-<skill-name>/
-├── SKILL.md              # 核心速览 + 全部索引（正文 < 4,000 tokens）
+<slug>/
+├── README.md             # 核心速览 + 全部索引（正文 < 4,000 tokens）
 ├── chapters/             # 逐章解析，按需加载
 ├── outline.md            # 框架大纲：论证地图（非虚构）或情节结构图（虚构）
 ├── settings/             # 设定集（虚构类重点）
@@ -32,21 +32,22 @@
 
 ## 使用
 
-在任何兼容 [Agent Skills](https://github.com/agentskills/agentskills) 标准的宿主中（Kimi Code、GitHub Copilot CLI、Amp、Claude Code、Codex），把本目录放进对应 skills 根目录（如 `~/.kimi-code/skills/explain-book`），然后：
-
 ```
 /explain-book ./某本书.pdf
-/explain-book ./小说卷一.epub fanren-v1
+/explain-book ./小说卷一.pdf fanren-v1
 /explain-book ./notes/ --只解析        # 先出解析报告，不生成文件
 ```
 
-工作流（内容类型识别 → 文本提取 → 成本预估 → 逐章解析 → 支撑文件 → 主索引 → 安全扫描）详见 [SKILL.md](SKILL.md)。
+产出默认写到当前项目的 `explain-book/<slug>/` 目录（可指定其他位置）—— 是一组可直接阅读、可被 agent 按需查询的普通 markdown 文档，**不会安装成新的 skill**。
+
+工作流（内容类型识别 → 文本提取 → 成本预估 → 逐章解析 → 支撑文件 → 主索引 → 安全扫描）详见 [SKILL.md](SKILL.md)；章节模板、支撑文件规格与更新/合并流程在 [references/](references/) 下。
 
 ## 仓库结构
 
 ```
 explain-book/
 ├── SKILL.md              # skill 定义 + 分步解析规范（生成器规格）
+├── references/           # 章节模板、支撑文件规格、更新/合并流程（按需加载）
 ├── scripts/
 │   └── extract.py        # 提取入口（薄封装）
 ├── explain_book/         # 提取器包（vendored from book-to-skill，MIT）
@@ -55,16 +56,16 @@ explain-book/
 │   ├── exceptions.py     #   ExtractionError（单源失败不拖垮批处理）
 │   ├── sanitize.py       #   提取文本消毒（隐形码点等）
 │   ├── utils.py          #   CLI 解析、多源合并、章节检测
-│   └── parsers/          #   各格式解析器（pdf/epub/docx/html/rtf/calibre/text）
+│   └── parsers/          #   各格式解析器（pdf/docx/html/rtf/text）
 └── tools/
     └── scan_generated_skill.py  # 生成物的提示词注入/越权扫描
 ```
 
-支持的输入格式：PDF、EPUB、DOCX、HTML、Markdown、纯文本、reStructuredText、AsciiDoc、RTF、MOBI/AZW（需 Calibre）。可选依赖检查：`python scripts/extract.py --check`。
+支持的输入格式：PDF、DOCX、HTML、Markdown、纯文本、reStructuredText、AsciiDoc、RTF。可选依赖检查：`python scripts/extract.py --check`。
 
 ## 版权
 
-本仓库不附带任何书籍内容。解析在你本地完成；生成的知识库是你的结构化笔记，第三方版权书籍的知识库请保持私有。
+本仓库不附带任何书籍内容。解析在你本地完成；生成的解析文档是你的结构化笔记，第三方版权书籍的解析文档请保持私有。
 
 ## 归属与许可
 
