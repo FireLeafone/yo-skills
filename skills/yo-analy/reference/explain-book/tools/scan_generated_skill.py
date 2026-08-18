@@ -23,16 +23,16 @@ SUPPORTING_FILENAMES = (
     "techniques.md",
     "anti-patterns.md",
     "glossary.md",
-    # book-to-skill-style layouts, in case a scanned skill came from there
+    # 兼容 book-to-skill 风格的目录布局，以防被扫描的 skill 来自该工具
     "patterns.md",
     "cheatsheet.md",
 )
 SUPPORTING_DIRS = ("chapters", "settings")
 
-# Reuse the extractor's invisible-code-point set instead of duplicating it, so
-# the two injection defenses cannot drift apart. They previously did: the
-# extractor did not strip U+2060 while this scanner flagged it, so a generated
-# skill was warned about a character extraction was meant to have removed.
+# 复用提取器的不可见码位集合，而不是在这里重复定义一份，
+# 这样两道注入防线不会因各自维护而逐渐漂移不一致。历史上确实漂移过：
+# 提取器没有剥离 U+2060，而本扫描器会标记它，导致生成的 skill
+# 因为一个本应在提取阶段就被移除的字符而收到告警。
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from explain_book.sanitize import is_invisible_codepoint  # noqa: E402
 
@@ -72,20 +72,19 @@ _CONTENT_RULES = (
         "contains a model chat-template delimiter",
     ),
     (
-        # Only the delimited forms — a token, not the English phrase. The
-        # families below are the ones that appear in real chat templates and
-        # tool-calling protocols:
+        # 只匹配带分隔符的形式——即 token 本身，而非英文短语。
+        # 下面列出的几个家族是真实聊天模板和工具调用协议中会出现的形式：
         #
-        #   <tool_call> … </tool_call>     Hermes / Qwen style
-        #   <|tool_call|>                  special-token style
-        #   [TOOL_CALL] / [/tool_call]     bracket style
-        #   {{tool_call}}                  template placeholder
-        #   "tool_call"                    JSON key or value
+        #   <tool_call> … </tool_call>     Hermes / Qwen 风格
+        #   <|tool_call|>                  特殊 token 风格
+        #   [TOOL_CALL] / [/tool_call]     方括号风格
+        #   {{tool_call}}                  模板占位符
+        #   "tool_call"                    JSON 键或值
         #
-        # Matching bare prose instead fired on every book that explains what a
-        # tool call is — the agent and prompting books this converter is most
-        # used on. A gate that always trips on a whole category teaches people
-        # to wave it through, which costs more than the false positive itself.
+        # 如果改为匹配普通散文文本，那么每本讲解"什么是工具调用"的书都会
+        # 触发告警——而这正是本转换器最常处理的 agent 与提示词类书籍。
+        # 一个对整类内容必定误报的关卡，只会教人养成挥手放行的习惯，
+        # 其代价比误报本身更高。
         "prompt.tool_call_tag",
         re.compile(
             r"""<\|?\s*/?\s*tool[_ -]?call\s*\|?>      # <tool_call>, </tool_call>, <|tool_call|>
@@ -111,7 +110,7 @@ _SENSITIVE_TERM = re.compile(
 
 
 class ScanError(RuntimeError):
-    """Raised when the scanner cannot inspect the complete generated skill."""
+    """当扫描器无法完整检查生成的 skill 时抛出。"""
 
 
 @dataclass(frozen=True)
@@ -127,7 +126,7 @@ def _is_invisible(codepoint: int) -> bool:
 
 
 def _terminal_safe(value: str) -> str:
-    """Escape control and non-ASCII characters before printing untrusted paths."""
+    """打印不可信路径前，先转义其中的控制字符与非 ASCII 字符。"""
     return value.encode("unicode_escape", errors="backslashreplace").decode("ascii")
 
 
@@ -141,13 +140,13 @@ def _frontmatter_line_numbers(lines: Sequence[str]) -> set[int]:
 
 
 def _walk_markdown(directory: Path) -> list[Path]:
-    """Collect ``*.md`` under ``directory`` at any depth, ignoring symlinks.
+    """收集 ``directory`` 下任意深度的所有 ``*.md`` 文件，忽略符号链接。
 
-    ``os.walk(followlinks=False)`` rather than ``Path.rglob``: before Python 3.13
-    ``rglob`` descends into symlinked directories, which would let a generated
-    skill walk the scanner outside its own tree. Symlinked *files* are left in
-    the list and rejected later by :func:`_read_skill_files`, so a planted
-    symlink is reported as an error rather than silently skipped.
+    使用 ``os.walk(followlinks=False)`` 而非 ``Path.rglob``：在 Python 3.13
+    之前，``rglob`` 会进入符号链接目录，这会让生成的 skill 把扫描器带到
+    自身目录树之外。符号链接*文件*仍保留在列表中，稍后由
+    :func:`_read_skill_files` 拒绝，这样被植入的符号链接会以错误形式报告，
+    而不是被静默跳过。
     """
     found: list[Path] = []
     for walk_root, _dirnames, filenames in os.walk(directory, followlinks=False):
@@ -158,14 +157,13 @@ def _walk_markdown(directory: Path) -> list[Path]:
 
 
 def unscanned_markdown(path: Path) -> list[str]:
-    """Markdown files present in the skill directory but outside the scan scope.
+    """列出存在于 skill 目录中、但在扫描范围之外的 Markdown 文件。
 
-    The scope is deliberately bounded to what explain-book generates (SKILL.md
-    or README.md, the supporting files, and ``chapters/``), so unrelated notes
-    in the directory are not scanned and cannot raise false findings. The risk
-    is the *reporting*: printing "scan passed" while files the agent will
-    happily read went unopened is a false assurance. Listing them keeps the
-    bounded scope honest.
+    扫描范围被刻意限定为 explain-book 所生成的内容（SKILL.md 或
+    README.md、各支持文件以及 ``chapters/``），因此目录里无关的笔记
+    不会被扫描，也不可能产生误报。真正的风险在于*报告环节*：如果一边
+    打印"扫描通过"，一边却有 agent 会照常读取的文件从未被打开检查，
+    那就是虚假的安全感。把这些文件列出来，可以让受限的扫描范围保持诚实。
     """
     requested = path.expanduser()
     root = (
@@ -199,8 +197,8 @@ def _collect_skill_files(skill_dir: Path) -> list[Path]:
     if master.is_symlink():
         raise ScanError("SKILL.md must be a real file, not a symbolic link")
     if not master.is_file():
-        # explain-book now emits plain document sets whose master document is
-        # README.md rather than an installable SKILL.md; accept either layout.
+        # explain-book 现在输出的是普通文档集，其主文档为 README.md
+        # 而非可安装的 SKILL.md；两种布局都接受。
         master = root / "README.md"
         if master.is_symlink() or not master.is_file():
             raise ScanError(
@@ -345,9 +343,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     if skipped:
-        # Advisory only, and deliberately not a Finding: the bounded scope is
-        # intentional, so these files must not change the exit code. But the
-        # user has to know the "passed" line below does not cover them.
+        # 仅作提示，且刻意不作为 Finding：受限的扫描范围是有意设计，
+        # 因此这些文件不得改变退出码。但必须让用户知道，
+        # 下方的"passed"一行并不覆盖这些文件。
         print(
             f"Note: {len(skipped)} Markdown file(s) in the skill directory are "
             "outside the generated-skill scope and were NOT scanned:"

@@ -1,2 +1,2 @@
 class ExtractionError(Exception):
-    """Raised when a single file cannot be extracted (non-fatal in batch mode)."""
+    """当单个文件无法提取时抛出（批处理模式下不致命）。"""

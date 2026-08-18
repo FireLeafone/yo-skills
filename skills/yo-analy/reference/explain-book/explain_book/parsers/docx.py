@@ -6,18 +6,15 @@ from explain_book.exceptions import ExtractionError
 
 
 def extract_docx_with_python_docx(docx_path: str) -> str | None:
-    # Called unconditionally (not just via extract_docx()) so this function is
-    # self-defending when invoked directly WITH python-docx installed:
-    # raises ExtractionError on DOCTYPE/ENTITY declarations before
-    # python-docx ever opens the archive. If python-docx is NOT installed,
-    # this returns None without validating at all -- a parser that isn't
-    # installed parses nothing, so skipping the scan gives up no safety
-    # (nothing gets extracted, malicious or not), and it avoids paying the
-    # full archive scan on every extract_docx() call in the (default,
-    # stdlib-only) case where this parser never even runs. A caller that
-    # invokes this function directly and needs a validation guarantee
-    # regardless of python-docx's availability should use
-    # extract_docx_with_zipfile() or call validate_docx_xml_safety() itself.
+    # 本函数被无条件调用（而非仅经由 extract_docx()），因此在已安装
+    # python-docx 的情况下被直接调用时也能自我保护：在 python-docx 打开
+    # 压缩包之前，就因 DOCTYPE/ENTITY 声明抛出 ExtractionError。如果未安装
+    # python-docx，则完全不做校验、直接返回 None —— 未安装的解析器什么也
+    # 解析不了，跳过扫描不会损失任何安全性（无论恶意与否都提取不到内容），
+    # 也避免在（默认的、仅标准库的）情况下为每次 extract_docx() 调用都支付
+    # 一次完整压缩包扫描 —— 那种情况下本解析器根本不会运行。直接调用本
+    # 函数、且无论 python-docx 是否可用都需要校验保证的调用方，应改用
+    # extract_docx_with_zipfile()，或自行调用 validate_docx_xml_safety()。
     try:
         import docx
         validate_docx_xml_safety(docx_path)
@@ -32,9 +29,9 @@ def extract_docx_with_python_docx(docx_path: str) -> str | None:
     except ImportError:
         return None
     except ExtractionError:
-        # Without this, the broad `except Exception` below would catch an
-        # XXE rejection from validate_docx_xml_safety() too, turning a
-        # security refusal into a swallowed [warn] + None.
+        # 没有这一句，下面宽泛的 `except Exception` 会把
+        # validate_docx_xml_safety() 的 XXE 拒绝也一并捕获，把一次安全拒绝
+        # 变成被吞掉的 [warn] + None。
         raise
     except Exception as e:
         print(f"  [warn] extract_docx_with_python_docx failed: {type(e).__name__}: {e}", file=sys.stderr)
@@ -42,9 +39,9 @@ def extract_docx_with_python_docx(docx_path: str) -> str | None:
 
 
 def extract_docx_with_zipfile(docx_path: str) -> str | None:
-    # Called unconditionally (not just via extract_docx()) so this function is
-    # self-defending even when invoked directly: raises ExtractionError on
-    # DOCTYPE/ENTITY declarations before the XML ever reaches the parser.
+    # 本函数被无条件调用（而非仅经由 extract_docx()），因此被直接调用时也
+    # 能自我保护：在 XML 到达解析器之前，就因 DOCTYPE/ENTITY 声明抛出
+    # ExtractionError。
     validate_docx_xml_safety(docx_path)
     try:
         import xml.etree.ElementTree as ET
@@ -56,15 +53,13 @@ def extract_docx_with_zipfile(docx_path: str) -> str | None:
         parts: list[str] = []
 
         def emit_block(elem) -> None:
-            # Walk block content in document order. Paragraphs join their runs;
-            # tables emit one tab-joined line per row (same row format as the
-            # python-docx path, but order-preserving — python-docx appends all
-            # tables last). Unknown wrappers (e.g. <w:sdt> content controls) are
-            # recursed into so their paragraphs/tables are not lost; <w:p> and
-            # <w:tbl> are NOT recursed into, so table-cell paragraphs are not
-            # double-counted. Cell text concatenates the cell's runs; nested
-            # tables fold into the parent cell and are also emitted standalone
-            # (rare; best-effort).
+            # 按文档顺序遍历块级内容。段落合并其内部的 run；表格每行输出一行
+            # 制表符连接的文本（行格式与 python-docx 路径相同，但保持原有顺序
+            # —— python-docx 会把所有表格追加到最后）。未知的包裹元素（如
+            # <w:sdt> 内容控件）会递归进入，以免其中的段落/表格丢失；<w:p> 和
+            # <w:tbl> 则不递归，避免表格单元格里的段落被重复计数。单元格文本
+            # 由单元格内的 run 拼接而成；嵌套表格归入父单元格，同时也会单独
+            # 输出（少见；尽力而为）。
             for child in elem:
                 tag = child.tag
                 if tag == f"{ns}p":
@@ -91,7 +86,7 @@ def extract_docx_with_zipfile(docx_path: str) -> str | None:
 
 
 def validate_docx_xml_safety(docx_path: str) -> None:
-    """Scan all XML files in the DOCX zip archive to prevent XML Entity Expansion (Billion Laughs) and XXE injections."""
+    """扫描 DOCX zip 压缩包中的所有 XML 文件，防止 XML 实体扩展（Billion Laughs）和 XXE 注入。"""
     try:
         with zipfile.ZipFile(docx_path) as zf:
             for name in zf.namelist():
@@ -115,10 +110,10 @@ def validate_docx_xml_safety(docx_path: str) -> None:
 
 
 def extract_docx(docx_path: str) -> tuple[str, str]:
-    # Validation lives in each leaf parser (extract_docx_with_python_docx,
-    # extract_docx_with_zipfile) so it runs exactly once regardless of which
-    # parser actually handles the file, instead of once here plus again in
-    # whichever parser this falls through to.
+    # 校验放在各个叶子解析器（extract_docx_with_python_docx、
+    # extract_docx_with_zipfile）中，这样无论实际由哪个解析器处理文件，
+    # 校验都恰好执行一次，而不是在这里执行一次、再在最终落入的解析器里
+    # 又执行一次。
     print("Trying python-docx...", end=" ", flush=True)
     text = extract_docx_with_python_docx(docx_path)
     if text and text.strip():

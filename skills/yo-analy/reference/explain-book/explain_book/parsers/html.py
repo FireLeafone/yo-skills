@@ -6,15 +6,14 @@ from explain_book.parsers.text import read_text_file
 
 
 class _HTMLTextExtractor(html.parser.HTMLParser):
-    """Minimal HTML → plain text converter using stdlib only."""
+    """仅使用标准库的最简 HTML → 纯文本转换器。"""
 
     SKIP_TAGS = {"script", "style", "head"}
 
-    # Block-level elements. A boundary is emitted both when they open and when
-    # they CLOSE — closing matters, because without it the text of two adjacent
-    # blocks concatenates ("<h2>Chapter 1</h2>Intro" -> "Chapter 1Intro"), which
-    # destroys chapter detection: _EXPLICIT_CHAPTER requires a word boundary
-    # after the number, and "1I" has none.
+    # 块级元素。它们在开始标签和结束标签处都会发出一个边界 —— 结束标签处
+    # 的边界很关键：没有它，相邻两个块的文字会粘连（"<h2>第一章</h2>引子"
+    # 变成 "第一章引子"），从而破坏章节识别 —— 中文章节标题匹配要求标题
+    # 独占一行，粘连后的行不再匹配。
     BLOCK_TAGS = frozenset({
         "address", "article", "aside", "blockquote", "br", "dd", "details",
         "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer",
@@ -22,24 +21,22 @@ class _HTMLTextExtractor(html.parser.HTMLParser):
         "li", "main", "nav", "ol", "p", "pre", "section", "table", "tbody",
         "tfoot", "thead", "tr", "ul",
     })
-    # Table cells are separated by a tab rather than a newline so a row stays on
-    # one line — the same convention the stdlib DOCX fallback already uses for
-    # tab-joined table rows, and what keeps a table-formatted table of contents
-    # ("Chapter 1 | Introduction | 1") parseable as a single heading line.
+    # 表格单元格用制表符而非换行分隔，使一行保持在同一行上 —— 这与标准库
+    # DOCX 回退解析器对制表符连接的表格行采用的约定一致，也能让表格形式的
+    # 目录（"第一章 | 引论 | 1"）仍可作为单独一行标题被解析出来。
     CELL_TAGS = frozenset({"td", "th"})
 
     def __init__(self):
         super().__init__()
         self._parts: list[str] = []
         self._skip_depth = 0
-        # Strongest boundary awaiting the next non-blank text run. Deferring it
-        # (instead of appending immediately) means nested blocks such as
-        # "<div><p>x" collapse to one separator rather than a run of blank lines.
+        # 等待下一个非空文本段的最强边界。推迟写入（而不是立即追加）意味着
+        # "<div><p>x" 这类嵌套块会合成为一个分隔符，而不是一串空行。
         self._pending = ""
 
     def _mark(self, separator: str) -> None:
-        # "\n" outranks "\t": a row/block boundary must not be downgraded to a
-        # cell boundary by a <td> that opens straight after a <tr>.
+        # "\n" 优先于 "\t"：行/块边界不能被紧跟在 <tr> 之后打开的 <td>
+        # 降级为单元格边界。
         if separator == "\n" or not self._pending:
             self._pending = separator
 
@@ -66,22 +63,20 @@ class _HTMLTextExtractor(html.parser.HTMLParser):
             return
         if self._pending:
             if not data.strip():
-                # Whitespace-only text between tags is layout indentation. It
-                # cannot satisfy a pending boundary, and emitting it before the
-                # boundary would just add trailing spaces — drop it and keep
-                # waiting for real content.
+                # 标签之间的纯空白文本只是排版缩进。它不能满足待处理的边界，
+                # 而在边界之前输出它只会增加行尾空格 —— 丢弃它，继续等待真正
+                # 的内容。
                 return
-            # Suppress a leading separator so the output does not start with a
-            # blank line.
+            # 抑制开头的分隔符，避免输出以空行开始。
             if self._parts:
                 self._parts.append(self._pending)
             self._pending = ""
         self._parts.append(data)
 
     def get_text(self) -> str:
-        # HTMLParser(convert_charrefs=True) already decoded entities in
-        # handle_data; do NOT unescape again or double-encoded entities
-        # (e.g. "&amp;amp;") collapse incorrectly.
+        # HTMLParser(convert_charrefs=True) 已经在 handle_data 中解码过实体；
+        # 不要再次 unescape，否则二次编码的实体（如 "&amp;amp;"）会被错误地
+        # 还原。
         return "".join(self._parts)
 
 

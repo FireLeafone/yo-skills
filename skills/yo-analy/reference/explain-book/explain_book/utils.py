@@ -43,20 +43,18 @@ from explain_book.parsers.pdf import (
 from explain_book.sanitize import sanitize_extracted_text
 
 
-# CJK codepoints: ideographs + extensions, kana, hangul, CJK punctuation, and
-# fullwidth forms. These are not whitespace-delimited, so counting "words" on a
-# Chinese/Japanese book collapses it to a handful of tokens; count them directly.
+# CJK 码位：表意文字及其扩展、假名、谚文、CJK 标点和全角形式。
+# 这些文字不以空白分隔，所以对一本中文书按"单词"计数会把整本书压缩成
+# 寥寥几个 token；必须直接按字符计数。
 #
-# The last range is Planes 2 and 3 (U+20000-U+3FFFF), the ideographic
-# supplementary planes, taken end to end rather than enumerated block by block
-# so a future extension does not silently fall through the way Extension H
-# (U+31350-U+323AF) did. Nothing non-ideographic lives up here: emoji,
-# mathematical alphanumerics and regional indicators are all in Plane 1, which
-# this range does not touch. Classical Chinese, Cantonese, Hong Kong and
-# Taiwan place/personal names, and Japanese 人名用漢字 all draw on it. Without it
-# those characters fell through to the whitespace-word branch, where a
-# space-less run of them counts as a single "word": the same ~1000x undercount
-# #103 fixed for the BMP, one plane up.
+# 最后一段范围是第 2、3 平面（U+20000-U+3FFFF），即表意文字补充平面，
+# 整体端到端取用而不是逐块枚举，这样将来出现新扩展时不会像扩展 H
+# （U+31350-U+323AF）曾经那样静默漏掉。这个范围里没有任何非表意文字：
+# emoji、数学字母数字符号和区域指示符都在第 1 平面，本范围不触及。
+# 文言文、粤语、港台地名/人名用字都取自该平面。缺了它，这些字符会掉进
+# 按空白分词的分支：一段无空格的连续字符只算一个"词"——这正是 #103
+# 在基本多文种平面（BMP）上修掉的约 1000 倍少计问题，只是位置高了一个
+# 平面。
 _CJK_RE = re.compile(
     r"[　-〿぀-ヿ㐀-䶿一-鿿"
     r"가-힣豈-﫿＀-￯"
@@ -65,146 +63,80 @@ _CJK_RE = re.compile(
 
 
 def estimate_tokens(text: str) -> int:
-    """Estimate the token count of ``text`` with a deterministic heuristic.
+    """用确定性的启发式方法估算 ``text`` 的 token 数量。
 
-    Latin / whitespace-delimited text is counted by words (``words /
-    WORDS_PER_TOKEN`` — the project's long-standing ratio). CJK characters are
-    counted directly against ``CJK_CHARS_PER_TOKEN`` because they carry little
-    or no whitespace; without this a space-less Chinese/Japanese book estimates
-    at a few tokens and the cost pre-flight under-reports by ~1000x. Kept
-    dependency-free on purpose so the same book always yields the same number.
+    拉丁字母/以空白分隔的文本按词计数（``词数 / WORDS_PER_TOKEN`` ——
+    项目长期沿用的比例），CJK 字符直接按 ``CJK_CHARS_PER_TOKEN`` 计数，
+    因为这类文字之间几乎没有空白；不做此区分的话，一本无空格的中文书
+    只会估算出几个 token，成本预检会少报约 1000 倍。中文书里也常夹杂
+    英文单词，因此始终使用两者相加的混合公式，对纯中文、混排、纯英文
+    文本都能得到正确结果。刻意不引入任何依赖，保证同一本书每次算出
+    相同的数字。
     """
     if not text:
         return 0
     cjk = len(_CJK_RE.findall(text))
-    if not cjk:
-        return int(len(text.split()) / WORDS_PER_TOKEN)
     latin_words = len(_CJK_RE.sub(" ", text).split())
     return int(latin_words / WORDS_PER_TOKEN + cjk / CJK_CHARS_PER_TOKEN)
 
 
-# Explicit chapter heading: "Chapter 5", "Capítulo 5: ...", "Chapter 1. Intro".
-# Also French/German/Italian/Dutch chapter words (chapitre/kapitel/capitolo/
-# hoofdstuk), matching the ToC languages added alongside. "ch.?" stays last so
-# the longer words match in full. Captures the number (bounded to 1..99 — drops
-# years like "2025.") and whatever follows it on the line, so we can reject prose.
-_EXPLICIT_CHAPTER = re.compile(
-    r"^\s*(?:chapter|chapitre|kapitel|cap[ií]tulo|capitolo|hoofdstuk|ch\.?)\s*(?:(\d{1,2})|(?P<roman>[IVXLCDMivxlcdm]{1,7}))\b(?P<rest>.*)$",
-    re.IGNORECASE,
-)
-# A heading's number is followed by end-of-line, punctuation (“. : - —“), or a
-# Capitalized title word. A lowercase continuation (“Chapter 6 explores...”,
-# “Chapter 8 are relevant...”) is prose / a cross-reference, not a heading.
-# The uppercase class is À-Þ so titles starting with Ü/Û (common in German, e.g. “Überblick”) are recognized.
-_HEADING_TAIL = re.compile(r"^\s*$|^\s*[.:\-—–]|^\s+[A-ZÀ-Þ0-9\"“(]")
-
-# Roman-numeral chapter heading: "I: Loomings", "II. The Carpet-Bag".
-# Uppercase alone at line start is safe — no common English word is a valid
-# uppercase Roman numeral.  Lowercase ("i: Loomings") is only accepted inside
-# a markdown heading ("## i. introduction") to avoid false positives from
-# words that happen to be valid Roman numerals ("vi: the editor" → 6).
-_ROMAN_HEAD = re.compile(r"^\s*([IVXLCDM]+)\s*[:.]\s+[A-ZÀ-Þ0-9\"“(]")
-_LC_MD_ROMAN = re.compile(r"^\s*#{1,6}\s+([ivxlcdm]+)\s*[:.]\s+[A-Za-zÀ-Þ\"“(]")
-_ROMAN_VALUES = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
-
-# Optional Markdown / AsciiDoc heading prefix ("## Chapter 1", "== Section").
-# Stripped in _chapter_number() as a second pass so the CJK/Thai/Korean
-# matchers (which already tolerate the prefix inline) are untouched. (Issue #91)
+# 可选的 Markdown / AsciiDoc 标题前缀（"## 第一章"、"== 某节"）。
+# 在 _chapter_number() 中作为第二遍匹配时剥离重试，中文匹配器本身已能
+# 容忍行内的该前缀，无需改动。(Issue #91)
 _MD_HEADING_PREFIX = re.compile(r"^(#{1,6}|={1,6})\s+")
 
-# Chinese chapter headings. Two common styles:
-#   1. explicit "第N章" / "第 3 回" / "第十二节" / "第一讲" — 第 + numeral + a
-#      chapter classifier (章回卷节篇讲);
-#   2. a Markdown heading led by a CJK ordinal and a separator, e.g.
-#      "## 一 · 缘起" or "## 第一讲" — common in CJK ebooks and lecture notes.
-# Scoped to CJK numerals, so Latin/Roman detection above is completely unaffected
-# (e.g. "## 5 Setup" is still not treated as a heading here). detect_structure()
-# dedupes by number, so a "##" heading and a repeated "###" sub-ordinal collapse
-# to a single chapter.
+# 中文章节标题。两种常见形式：
+#   1. 显式的 "第N章" / "第 3 回" / "第十二节" / "第一讲" —— 第 + 数词 +
+#      章节量词（章回卷节篇讲）；
+#   2. 以中文序数加分隔符开头的 Markdown 标题，如 "## 一 · 缘起" 或
+#      "## 第一讲" —— 在中文电子书和讲义中很常见。
+# 只匹配中文数词，所以 "## 5 Setup" 这类纯阿拉伯数字标题不会在这里被
+# 误判为章节。detect_structure() 按章节号去重，所以 "##" 标题和重复的
+# "###" 子序号会合并为同一章。
 _CN_NUM_VALUES = {
     "〇": 0, "零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5,
     "六": 6, "七": 7, "八": 8, "九": 9,
 }
 _CN_NUM_UNITS = {"十": 10, "百": 100, "千": 1000}
 _CN_NUM_CLASS = "〇零一二两三四五六七八九十百千"
-# Full-width Arabic digits (U+FF10–U+FF19) are common in Japanese typesetting,
-# e.g. "第１章". int() already parses them (str.isdigit() is True), so only the
-# regex character classes need to accept them.
+# 全角阿拉伯数字（U+FF10–U+FF19）在中文电子书排版中也常见，如 "第１章"。
+# int() 本身就能解析它们（str.isdigit() 为 True），所以只需让正则的
+# 字符类接受它们。
 _FW_DIGITS = "０-９"
 _CN_CHAPTER = re.compile(rf"^\s*第\s*([0-9{_FW_DIGITS}{_CN_NUM_CLASS}]+)\s*[章回卷节篇讲]")
 _MD_CN_HEADING = re.compile(rf"^#{{1,6}}\s+第?\s*([{_FW_DIGITS}{_CN_NUM_CLASS}]+)\s*[·、.:：章回卷节篇讲]")
 
-# Thai chapter headings: "บทที่ 3", "บทที่ ๑๒", "ตอนที่ ๘๗", "ภาคที่ 2".
-# Thai digits (U+0E50-U+0E59) are positional like Arabic — unlike the Chinese
-# numerals above they need no unit composition, only a digit remap. Optional
-# Markdown "#" prefix so "## บทที่ ๑" is recognized in converted ebooks.
-_TH_DIGITS = "๐-๙"
-_TH_DIGIT_MAP = str.maketrans("๐๑๒๓๔๕๖๗๘๙", "0123456789")
-_TH_CHAPTER = re.compile(
-    rf"^\s*(?:#{{1,6}}\s+)?(?:บทที่|ตอนที่|ภาคที่|บท|ตอน|ภาค)\s*([0-9{_TH_DIGITS}]+)\b"
-)
-
-# Korean chapter headings: "제1장 총칙", "## 제4장 근로시간과 휴식", "제6장의2 …".
-# 제 + Arabic numeral + a classifier (장 chapter / 편 part / 절 section / 관
-# subsection), with an optional "의N" branch suffix that Korean statutes use for
-# inserted chapters (제6장의2). Modern Korean numbers chapters with Arabic digits,
-# so unlike the Chinese branch no numeral composition is needed. Optional Markdown
-# "#" prefix so "## 제1장" is recognized in converted ebooks.
-#
-# The trailing group is the Korean analogue of _HEADING_TAIL: Korean has no letter
-# case, so the existing "capitalized title word" test does not transfer.
-# Requiring end-of-line, punctuation, or whitespace-then-content is what separates
-# a heading from a prose cross-reference, because Korean particles attach directly
-# to the noun ("제5장에서", "제2장의") with no intervening space.
-_KO_CHAPTER = re.compile(
-    r"^\s*(?:#{1,6}\s+)?제\s*([0-9]+)\s*[장편절관](?:\s*의\s*[0-9]+)?(?:\s*$|[.:\-]|\s+\S)"
-)
-
-# Table-of-contents header lines across common languages. Anchored to a whole
-# line (^\s*X\s*$) so an inline "the contents of this chapter" never matches.
-_TOC_HEADERS = (
-    "table of contents", "contents", "índice", "sumário",   # EN / ES / PT
-    "sumario",                                              # PT (no accent — OCR / accent-stripped, like indice below)
-    "table des matières",                                   # French
-    "inhaltsverzeichnis",                                   # German
-    "indice", "sommario",                                   # Italian (no accent — distinct from índice above)
-    "inhoudsopgave",                                        # Dutch
-)
+# 目录标题行（仅中文）："目录"、"目  录"、"目錄"、"目次"。
+# 锚定整行（^\s*X\s*$），正文里行内出现的"目录"二字不会命中。
 _TOC_CJK_PATTERN = r"目[ \t\u3000]*(?:录|錄|次)"
-_TOC_PATTERN = re.compile(
-    r"^\s*(?:"
-    + "|".join([*(re.escape(h) for h in _TOC_HEADERS), _TOC_CJK_PATTERN])
-    + r")\s*$",
-    re.IGNORECASE | re.MULTILINE,
-)
+_TOC_PATTERN = re.compile(rf"^\s*{_TOC_CJK_PATTERN}\s*$", re.MULTILINE)
 
-# ATX-style heading: "# Title", "## Section", AsciiDoc "= Title", "== Section".
-# The required space after the marker distinguishes an AsciiDoc "== X" from a
-# reStructuredText underline "=====" (no space) — the latter is intentionally
-# ignored (RST underline headings are out of scope).
+# ATX 风格标题："# 标题"、"## 小节"，以及 AsciiDoc 的 "= 标题"、"== 小节"。
+# 标记后必须跟一个空格，借此把 AsciiDoc 的 "== X" 和 reStructuredText 的
+# 下划线 "====="（无空格）区分开 —— 后者被有意忽略（RST 下划线标题不在
+# 支持范围内）。
 _ATX_HEADING = re.compile(r"^(#{1,6}|={1,6})\s+(.+?)\s*#*$")
-# Setext/RST underline: a full line of "=" (level 1) or "-" (level 2), length
-# >= 2. Marks the line directly above it as a heading title.
+# Setext/RST 下划线：一整行 "="（一级）或 "-"（二级），长度 >= 2。
+# 把它正上方的一行标记为标题。
 _SETEXT_UNDERLINE = re.compile(r"^(={2,}|-{2,})$")
 
 
-# Opening or closing line of a fenced code block: three or more backticks or
-# tildes. The captured marker lets the closer be matched to its opener.
+# 围栏代码块的起始/结束行：三个及以上反引号或波浪号。
+# 捕获到的标记用于把结束围栏与它的开始围栏配对。
 _CODE_FENCE = re.compile(r"^(`{3,}|~{3,})")
 
 
 def _closed_fence_line_numbers(lines: list[str]) -> set[int]:
-    """Line indices inside a fenced code block that is actually CLOSED.
+    """返回处于"确实闭合"的围栏代码块内部的行号集合。
 
-    A fence that never closes is treated as ordinary text rather than swallowing
-    everything after it. Extraction routinely loses a closing fence, and a book
-    about Markdown can simply contain a stray one — and the old live-toggling
-    scan then dropped every heading from that point to the end of the document.
-    Counting a handful of code lines as prose is a far cheaper mistake than
-    losing most of a book's structure.
+    从未闭合的围栏按普通文本处理，而不是吞掉它之后的所有内容。文本提取
+    经常会弄丢结束围栏，一本讲 Markdown 的书也可能直接散落着一个孤立的
+    围栏 —— 旧的"遇围栏即翻转状态"的扫描方式会把从那一点到文档末尾的
+    所有标题全部丢掉。把几行代码误当正文，代价远小于丢掉一本书的大半
+    结构。
 
-    The closing fence must use the SAME character as its opener, per CommonMark,
-    so a "```" block is no longer terminated by an unrelated "~~~" line.
+    按 CommonMark 规范，结束围栏必须使用与开始围栏相同的字符，所以
+    "```" 开始的代码块不再会被一个不相干的 "~~~" 行终止。
     """
     inside: set[int] = set()
     opener: tuple[str, int] | None = None
@@ -216,20 +148,18 @@ def _closed_fence_line_numbers(lines: list[str]) -> set[int]:
         if opener is None:
             opener = (marker[0], index)
         elif marker[0] == opener[0]:
-            # Include both fence marker lines themselves.
+            # 两条围栏标记行本身也计入内部。
             inside.update(range(opener[1], index + 1))
             opener = None
     return inside
 
 
-# A numbered heading is a chapter when the numbering is systematic AND the
-# sections carry a chapter's worth of text. Both are required, because neither
-# separates the two shapes alone: a three-step tutorial is also systematic and
-# also ascends from 1, while a single long section is not a numbering scheme.
-# Measured medians of body text per section: tutorial steps ~20 chars, doc
-# sections ~500, paper sections ~2,000, real book chapters ~5,000. The floor
-# sits an order of magnitude below the smallest real chapter seen and an order
-# above the largest tutorial step.
+# 数字开头的标题在"编号成体系"且"各节携带一章应有的文本量"时才算章节。
+# 两个条件缺一不可，因为单靠任何一个都分不开两种形态：三步教程同样成
+# 体系、同样从 1 递增；而单个长小节并不构成编号体系。
+# 实测的每节正文中位数：教程步骤约 20 字符，文档小节约 500，论文章节
+# 约 2,000，真正的书籍章节约 5,000。下限取在见过的最小真实章节之下
+# 一个数量级、最大教程步骤之上一个数量级的位置。
 _MIN_NUMBERED_TITLES = 3
 _MIN_NUMBERED_BODY_CHARS = 200
 
@@ -237,13 +167,12 @@ _MIN_NUMBERED_BODY_CHARS = 200
 def _numbered_titles_are_structural(
     entries: list[tuple[str, int]], heading_lines: list[int], lines: list[str]
 ) -> bool:
-    """Decide whether digit-led titles at one depth are chapters or list items.
+    """判断同一层级的数字开头标题是章节还是列表项。
 
-    Deliberately not based on the numbers themselves. An ascending run starting
-    at 1 describes "Step 1 / Step 2 / Step 3" as accurately as it describes a
-    paper's sections, and requiring the run to be unbroken would throw away a
-    whole book when extraction drops one heading, a chapter list that starts at
-    0, or a multi-source corpus where the numbering restarts.
+    刻意不依据数字本身判断。从 1 开始的递增序列既能准确描述
+    "Step 1 / Step 2 / Step 3"，也能准确描述论文的章节；如果要求序列
+    必须连续不断，那么当提取过程丢掉一个标题、章节列表从 0 开始、或
+    多来源语料里编号重新开始时，整本书都会被误判丢弃。
     """
     if len(entries) < _MIN_NUMBERED_TITLES:
         return False
@@ -257,37 +186,35 @@ def _numbered_titles_are_structural(
 
 
 def _structural_chapter_count(text: str) -> int:
-    """Count chapter-like structural headings in Markdown/AsciiDoc/RST sources.
+    """统计 Markdown/AsciiDoc/RST 文本中像章节的结构性标题数量。
 
-    Recognizes ATX headings ("# Title", "== Section") and setext/RST underline
-    headings (a title line directly above a row of "=" or "-"). Groups distinct
-    (case-normalized) titles by depth and returns the count at the shallowest
-    depth with >= 2 distinct titles — this selects the real chapter level in the
-    common "# Book Title / ## Chapter" layout where the top level appears once.
+    识别 ATX 标题（"# 标题"、"== 小节"）和 setext/RST 下划线标题
+    （标题行正下方紧挨一行 "=" 或 "-"）。将（大小写归一化后的）不重复
+    标题按层级分组，返回具有 >= 2 个不重复标题的最浅层级的标题数 ——
+    在常见的 "# 书名 / ## 章节" 版式中，最浅层只出现一次，这样能选中
+    真正的章节层级。
 
-    Guards against false positives: headings inside fenced code blocks are
-    skipped; an ATX title starting with a bare digit ("## 5 Setup") or made only
-    of punctuation ("=====" table borders) is rejected; a setext underline counts
-    only when it sits directly under a non-blank title line at least as long as
-    the underline (so thematic breaks, table borders, and front-matter "---" do
-    not match).
+    防误报措施：跳过围栏代码块里的标题；拒绝以裸数字开头的 ATX 标题
+    （"## 5 Setup"）和纯标点组成的标题（"=====" 表格边框）；setext
+    下划线只有在正上方紧贴一个非空、且不短于该下划线的标题行时才算数
+    （这样分隔线、表格边框和卷首的 "---" 都不会命中）。
     """
     lines = text.splitlines()
     levels: dict[int, set[str]] = {}
-    # Digit-led titles are held back and judged per depth at the end (see
-    # _numbered_titles_are_structural): "## 1. Introduction" and "## 5 Setup"
-    # are the same string shape, so the line alone cannot decide.
+    # 数字开头的标题先暂扣，最后按层级统一裁决（见
+    # _numbered_titles_are_structural）："## 1. 引言" 和 "## 5 Setup"
+    # 字符串形态相同，单凭一行无法区分。
     numbered: dict[int, list[tuple[str, int]]] = {}
     heading_lines: list[int] = []
     fenced = _closed_fence_line_numbers(lines)
-    prev = ""  # previous non-fence line (stripped); a setext title candidate
+    prev = ""  # 上一条非围栏行（已去空白）；setext 标题的候选行
     for index, line in enumerate(lines):
         if index in fenced:
             prev = ""
             continue
         s = line.strip()
-        # Setext/RST underline: "=" (level 1) or "-" (level 2) directly under a
-        # title line at least as long as the underline.
+        # Setext/RST 下划线："="（一级）或 "-"（二级），直接位于一个
+        # 不短于该下划线的标题行之下。
         if (
             _SETEXT_UNDERLINE.match(s)
             and prev
@@ -299,19 +226,19 @@ def _structural_chapter_count(text: str) -> int:
             heading_lines.append(index)
             prev = ""
             continue
-        # ATX heading ("# Title", "== Section").
+        # ATX 标题（"# 标题"、"== 小节"）。
         m = _ATX_HEADING.match(s)
         if m:
             title = m.group(2).strip().lower()
             depth = len(m.group(1))
-            # Reject empty and all-punctuation ("=====" table-border) titles.
+            # 拒绝空标题和纯标点标题（"=====" 表格边框）。
             if title and re.search(r"\w", title):
                 heading_lines.append(index)
                 if title[0].isdigit():
                     numbered.setdefault(depth, []).append((title, index))
                 else:
                     levels.setdefault(depth, set()).add(title)
-            # An ATX heading line is not a setext title for the next line.
+            # ATX 标题行不能充当下一行的 setext 标题。
             prev = ""
             continue
         prev = s
@@ -323,14 +250,14 @@ def _structural_chapter_count(text: str) -> int:
     for depth in sorted(levels):
         if len(levels[depth]) >= 2:
             return len(levels[depth])
-    # No level has >= 2 distinct headings: a thin doc (e.g. one heading per
-    # level). Count them all — this path runs only as a fallback when numeric
-    # chapter detection already found zero, so it cannot inflate real books.
+    # 没有任何层级拥有 >= 2 个不重复标题：说明是薄文档（比如每层只有
+    # 一个标题）。全部计入 —— 这条路径只在数字章节检测已经一无所获时
+    # 作为兜底运行，不会夸大真实书籍的章节数。
     return sum(len(titles) for titles in levels.values())
 
 
 def _cn_numeral_to_int(s: str) -> int | None:
-    """Parse a Chinese (or ASCII-digit) chapter numeral into an int (1..999)."""
+    """把中文（或 ASCII 数字）章节数词解析为 int（1..999）。"""
     if s.isdigit():
         n = int(s)
         return n if 1 <= n <= 999 else None
@@ -347,79 +274,34 @@ def _cn_numeral_to_int(s: str) -> int | None:
     return total if 1 <= total <= 999 else None
 
 
-def _int_to_roman(n: int) -> str:
-    table = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"),
-             (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"),
-             (5, "V"), (4, "IV"), (1, "I")]
-    out = []
-    for val, sym in table:
-        while n >= val:
-            out.append(sym)
-            n -= val
-    return "".join(out)
-
-
-def _roman_to_int(s: str) -> int | None:
-    """Convert a Roman numeral to int, returning None if it isn't canonical."""
-    s = s.upper()
-    total = prev = 0
-    for ch in reversed(s):
-        v = _ROMAN_VALUES.get(ch)
-        if v is None:
-            return None
-        total += -v if v < prev else v
-        prev = max(prev, v)
-    if total == 0 or total > 200:
-        return None
-    # Reject non-canonical forms ("IIII", "VV") by round-tripping.
-    return total if _int_to_roman(total) == s else None
-
-
 def _match_chapter_number(line: str) -> int | None:
-    """Return the chapter number if the line is a genuine chapter heading,
-    with no Markdown/AsciiDoc heading prefix (the caller strips it first)."""
+    """若该行是真正的中文章节标题则返回章节号。
+
+    调用方需先剥离 Markdown/AsciiDoc 标题前缀。
+    """
     s = line.strip()
     if len(s) > 80:
         return None
-    m = _EXPLICIT_CHAPTER.match(s)
-    if m and _HEADING_TAIL.match(m.group("rest")):
-        if m.group(1):
-            return int(m.group(1))
-        return _roman_to_int(m.group("roman").upper())
-    rm = _ROMAN_HEAD.match(s) or _LC_MD_ROMAN.match(s)
-    if rm:
-        return _roman_to_int(rm.group(1))
     cm = _CN_CHAPTER.match(s) or _MD_CN_HEADING.match(s)
     if cm:
         return _cn_numeral_to_int(cm.group(1))
-    tm = _TH_CHAPTER.match(s)
-    if tm:
-        return int(tm.group(1).translate(_TH_DIGIT_MAP))
-    km = _KO_CHAPTER.match(s)
-    if km:
-        return int(km.group(1))
     return None
 
 
 def _chapter_number(line: str) -> int | None:
-    """Return the chapter number if the line is a genuine chapter heading.
+    """若该行是真正的中文章节标题则返回章节号。
 
-    Handles Arabic ("Chapter 5", "Capítulo 5: ..."), Roman-numeral
-    ("I: Loomings", "## i. introduction", "II. The Carpet-Bag"),
-    Chinese ("第三章 …", "## 一 · …", "## 第一讲"), Thai ("บทที่ 3",
-    "## บทที่ ๑"), and Korean ("제1장 총칙", "## 제4장 근로시간과 휴식")
-    heading styles — each optionally preceded by a Markdown/AsciiDoc heading
-    marker ("## Chapter 1" is a chapter heading just like "Chapter 1").
+    支持 "第三章 …"、"## 一 · 缘起"、"## 第一讲"、"第5章" 等中文标题
+    样式 —— 标题前可选地带一个 Markdown/AsciiDoc 标题标记（"## 第一章"
+    和 "第一章" 一样是章节标题）。
     """
     match = _match_chapter_number(line)
     if match is not None:
         return match
-    # Second pass: a Markdown/AsciiDoc heading prefix ("## Chapter 1",
-    # "== Section") hides the heading from the matchers above — the CJK
-    # matchers tolerate the prefix inline but the Latin/Thai/Korean ones anchor
-    # on the line start. Strip the prefix and retry so --mode technical
-    # (Docling emits headings as Markdown) detects the same chapters as
-    # plain-text extraction. (Issue #91)
+    # 第二遍：Markdown/AsciiDoc 标题前缀（"## 第一章"、"== 某节"）会让
+    # 上面的匹配器看不到标题本体。剥离前缀后重试，使 --mode technical
+    # （Docling 会把标题输出为 Markdown）能检测到与纯文本提取相同的
+    # 章节。(Issue #91)
     s = line.strip()
     md = _MD_HEADING_PREFIX.match(s)
     if md:
@@ -428,12 +310,11 @@ def _chapter_number(line: str) -> int | None:
 
 
 def detect_structure(text: str) -> dict:
-    """Detect chapter count and table of contents presence.
+    """检测章节数量和目录是否存在。
 
-    Scans the whole text (not just the head) and counts DISTINCT chapter numbers
-    from explicit "Chapter N"/"Capítulo N" headings, rejecting prose
-    cross-references and numbered list items. Counting distinct numbers means a
-    ToC entry and its body heading are not double-counted.
+    扫描全文（而不仅是开头），从显式的 "第N章" 等中文章节标题中统计
+    不重复的章节号，拒绝正文里的交叉引用和编号列表项。按不重复章节号
+    统计意味着目录条目和它对应的正文标题不会被重复计数。
     """
     lines = text.splitlines()
 
@@ -445,15 +326,14 @@ def detect_structure(text: str) -> dict:
             numbers.add(num)
             headings.append(line.strip())
     numeric_count = len(numbers)
-    # Fall back to structural (Markdown/AsciiDoc) headings only when no numeric
-    # "Chapter N" headings were found, so books with real chapters are unaffected.
+    # 只有在没有找到任何数字编号的 "第N章" 标题时，才回退到结构性
+    # （Markdown/AsciiDoc）标题，这样有真实章节的书不受影响。
     #
-    # Which branch answered is reported alongside the count. The two disagree
-    # often, and a wrong count is not visible in the output it produces: it
-    # becomes the plan in Step 3 and the chapter files of the generated skill.
-    # Every parser in this project already announces which method it used
-    # ("Trying python-docx... OK"); this decision had the same shape and was
-    # the only silent one.
+    # 最终是哪条分支给出的答案会随数量一起上报。两条分支经常不一致，
+    # 而错误的数量在它产出的结果里并不可见：它会变成第 3 步的拆解计划
+    # 和生成的技能里的章节文件。本项目的每个解析器都会声明自己用了哪种
+    # 方法（"Trying python-docx... OK"）；这个决策形态相同，却曾是唯一
+    # 沉默的一个。
     if numeric_count > 0:
         chapters_detected = numeric_count
         chapters_method = "numeric"
@@ -461,7 +341,7 @@ def detect_structure(text: str) -> dict:
         chapters_detected = _structural_chapter_count(text)
         chapters_method = "structural" if chapters_detected else "none"
 
-    # Look for ToC indicators in the first ~30k chars (multilingual; see _TOC_PATTERN)
+    # 在前 ~30k 字符内寻找目录标志（见 _TOC_PATTERN）
     has_toc = bool(_TOC_PATTERN.search(text[:30000]))
 
     return {
@@ -473,10 +353,10 @@ def detect_structure(text: str) -> dict:
 
 
 def parse_arguments(argv: list[str]) -> tuple[list[str], str, str]:
-    """Parse argv into (input_paths, extraction_mode, install_mode)."""
+    """把 argv 解析为 (input_paths, extraction_mode, install_mode)。"""
     input_paths = []
     extraction_mode = "text"
-    
+
     args = argv[1:]
     i = 0
     while i < len(args):
@@ -500,36 +380,34 @@ def parse_arguments(argv: list[str]) -> tuple[list[str], str, str]:
         else:
             input_paths.append(arg)
             i += 1
-            
+
     install_mode = normalize_install_mode(argv)
     if extraction_mode not in ("technical", "text"):
         extraction_mode = "text"
-        
+
     return input_paths, extraction_mode, install_mode
 
 
 def resolve_input_files(paths: list[str]) -> list[Path]:
-    """Resolve paths including files, directories, and glob patterns to Path objects.
+    """把路径（包括文件、目录和 glob 模式）解析为 Path 对象列表。
 
-    User-given order is preserved for explicit file arguments.  Expanded
-    results (directories, globs) are sorted deterministically so repeated
-    runs produce the same output.
+    显式给出的文件参数保持用户给出的顺序；展开得到的结果（目录、glob）
+    按确定性规则排序，保证重复运行产出相同的输出。
 
-    A leading "~" is expanded here rather than relying on the shell: a glob has
-    to be quoted to reach us unexpanded ("~/books/*.pdf"), and quoting stops
-    the shell expanding the tilde too. `glob.glob` and `Path` both treat "~" as
-    a literal directory name, so without this the pattern silently matches
-    nothing.
+    开头的 "~" 在这里展开，而不是依赖 shell：glob 模式必须加引号才能
+    未经展开地传到这里（"~/books/*.pdf"），而加引号会同时阻止 shell
+    展开波浪号。`glob.glob` 和 `Path` 都会把 "~" 当作字面目录名，不做
+    这一步的话模式会静默地什么都匹配不到。
     """
     resolved = []
     for raw_path in paths:
-        # Normalise "~" once, at the entry point, so both the glob branch and
-        # the file/directory branch below see a real path.
+        # 在入口处一次性规范化 "~"，让下面的 glob 分支和文件/目录分支
+        # 看到的都是真实路径。
         path_str = os.path.expanduser(raw_path)
-        # Check if it has glob wildcards
+        # 检查是否含有 glob 通配符
         if any(char in path_str for char in ("*", "?", "[")):
             glob_matches = glob.glob(path_str, recursive=True)
-            # Sort expanded glob results deterministically
+            # glob 展开结果按确定性规则排序
             expanded = []
             for match in glob_matches:
                 p = Path(match)
@@ -540,7 +418,7 @@ def resolve_input_files(paths: list[str]) -> list[Path]:
         else:
             p = Path(path_str)
             if p.is_dir():
-                # Sort expanded directory results deterministically
+                # 目录展开结果按确定性规则排序
                 dir_files = []
                 for root, _, files in os.walk(p):
                     for file in files:
@@ -550,10 +428,10 @@ def resolve_input_files(paths: list[str]) -> list[Path]:
                 dir_files.sort(key=lambda x: str(x).lower())
                 resolved.extend(dir_files)
             else:
-                # Keep even if it doesn't exist so the error check can report it
+                # 即使不存在也保留，以便错误检查能报告它
                 resolved.append(p.resolve())
 
-    # Deduplicate while preserving insertion order (user order for explicit files)
+    # 去重并保持插入顺序（显式文件按用户给出的顺序）
     seen = set()
     unique_paths = []
     for path in resolved:
@@ -566,22 +444,22 @@ def resolve_input_files(paths: list[str]) -> list[Path]:
 
 
 def extract_single_file(input_path: Path, extraction_mode: str, install_mode: str) -> dict:
-    """Extract text and metadata from a single file path."""
+    """从单个文件提取文本和元数据。"""
     input_str = str(input_path)
-    
+
     if not input_path.exists():
         raise ExtractionError(f"File not found: {input_str}")
-        
+
     ext = input_path.suffix.lower()
     document_format = ext.lstrip(".")
-    
-    # Sniff magic bytes if suffix is not supported.
+
+    # 后缀不受支持时嗅探魔数。
     #
-    # Every failure in this function has to surface as ExtractionError: the
-    # batch loop in main() catches only that, and anything else aborts the whole
-    # run — including the sources that would have extracted fine. An unreadable
-    # or unopenable file is a per-source problem, so translate it here. (The
-    # ZipFile branch below already does this for OSError.)
+    # 这个函数里的所有失败都必须以 ExtractionError 的形式浮出水面：
+    # main() 里的批处理循环只捕获这一种异常，其他任何异常都会中止整个
+    # 运行 —— 包括那些本来能正常提取的来源。无法读取或无法打开的文件
+    # 是单个来源的问题，所以在这里转换异常类型。（下面的 ZipFile 分支
+    # 已经对 OSError 这么做了。）
     if ext not in SUPPORTED_EXTENSIONS:
         try:
             with open(input_str, "rb") as f:
@@ -612,7 +490,7 @@ def extract_single_file(input_path: Path, extraction_mode: str, install_mode: st
             raise ExtractionError(
                 f"Unsupported format '{ext or '<none>'}'. Supported: {supported_formats_message()}"
             )
-            
+
     prepare_dependencies(ext, extraction_mode, install_mode)
 
     text = ""
@@ -638,7 +516,7 @@ def extract_single_file(input_path: Path, extraction_mode: str, install_mode: st
             else:
                 print("not available, falling back to pdftotext")
                 extraction_mode = "text"
-                
+
         if extraction_mode == "text" or not text:
             print("Mode: text — using pdftotext...")
             print("Trying pdftotext...", end=" ", flush=True)
@@ -671,7 +549,7 @@ def extract_single_file(input_path: Path, extraction_mode: str, install_mode: st
                             "  pip3 install pdfminer.six"
                         )
 
-                        
+
         pages = count_pages(input_str)
         pages_label = "pages"
     elif ext in TEXT_EXTENSIONS:
@@ -721,7 +599,7 @@ def extract_single_file(input_path: Path, extraction_mode: str, install_mode: st
         f"({structure['chapters_method']})"
     )
     file_size_mb = os.path.getsize(input_str) / (1024 * 1024)
-    
+
     return {
         "source_file": str(input_path.resolve()),
         "filename": input_path.name,
@@ -740,10 +618,10 @@ def extract_single_file(input_path: Path, extraction_mode: str, install_mode: st
 
 
 def prepare_output_dir(path: Path) -> None:
-    """Create the work directory, guarding against two shared-tmp risks:
-    a pre-planted symlink at a predictable path, and reusing a directory
-    another user already owns (either could expose or tamper with the
-    extracted document text, which may be sensitive).
+    """创建工作目录，并防范两类共享 tmp 目录风险：
+    在可预测路径上预先埋好的符号链接，以及复用一个已被其他用户
+    拥有的目录（两者都可能泄露或篡改提取出的文档文本，而文档
+    内容可能是敏感的）。
     """
     if path.is_symlink():
         raise ExtractionError(
@@ -766,11 +644,10 @@ def prepare_output_dir(path: Path) -> None:
 
 
 def print_intro() -> None:
-    """Two lines of attribution at the start of every run.
+    """每次运行开头打印的两行归属信息。
 
-    Printed here rather than only in SKILL.md so it shows however the agent
-    invokes extraction. Credits the upstream project the extraction engine
-    is vendored from.
+    放在这里打印而不是只写在 SKILL.md 里，这样无论 agent 以何种方式
+    调用提取流程都会显示。注明提取引擎内嵌（vendor）自哪个上游项目。
     """
     sys.stderr.write(
         "explain-book · parses a book into a structured document set (Markdown)\n"
@@ -780,16 +657,14 @@ def print_intro() -> None:
 
 
 def print_support_note() -> None:
-    """One closing line crediting the upstream extraction engine, printed only
-    after a successful run.
+    """运行成功后才打印的一行结尾致谢，注明上游提取引擎的来源。
 
-    The engine is vendored from book-to-skill, which its author maintains in
-    personal time; the line points grateful users at the upstream sponsor page.
-    Never printed when extraction failed.
+    该引擎内嵌自 book-to-skill，其作者利用个人时间维护；这一行给心怀
+    感激的用户指路上游的赞助页面。提取失败时绝不打印。
 
-    Written to stdout, with the rest of the closing report: stderr is
-    unbuffered and stdout is not when the run is piped (which is how an agent
-    captures it), so mixing the two puts the closing line at the top.
+    写到 stdout，和结尾报告的其余部分在一起：当运行被管道捕获时
+    （agent 正是这样捕获输出的），stderr 无缓冲而 stdout 有缓冲，
+    两者混用会把这行结尾语顶到输出最前面。
     """
     print(
         "\n   The extraction engine comes from book-to-skill, maintained upstream in personal time."
@@ -799,7 +674,7 @@ def print_support_note() -> None:
 
 
 def print_usage() -> None:
-    """Print standalone CLI usage."""
+    """打印独立命令行用法。"""
     print(
         "Usage: explain-book <path-to-document-folder-or-glob>... "
         "[--mode technical|text] [--install-missing ask|yes|no]",
@@ -825,25 +700,25 @@ def main():
     if len(sys.argv) < 2:
         print_usage()
         sys.exit(1)
-        
+
     raw_input_paths, extraction_mode, install_mode = parse_arguments(sys.argv)
-    
+
     if not raw_input_paths:
         print("ERROR: No input document, folder, or glob pattern specified.", file=sys.stderr)
         sys.exit(1)
-        
+
     input_files = resolve_input_files(raw_input_paths)
-    
+
     if not input_files:
         print(f"ERROR: No supported files found matching: {', '.join(raw_input_paths)}", file=sys.stderr)
         sys.exit(1)
-        
+
     prepare_output_dir(OUTPUT_DIR)
-    
+
     extracted_sources = []
     combined_texts = []
     errors = []
-    
+
     for file_path in input_files:
         try:
             res = extract_single_file(file_path, extraction_mode, install_mode)
@@ -852,46 +727,44 @@ def main():
             errors.append((file_path, str(exc)))
             continue
         extracted_sources.append(res)
-        
-        # Format the text with a clear boundary
+
+        # 用清晰的分隔边界包装文本
         separator = f"\n\n{'=' * 80}\nSOURCE: {res['filename']} (Path: {res['source_file']})\n{'=' * 80}\n\n"
         combined_texts.append(separator + res["text"])
-    
+
     if not extracted_sources:
         print(f"\nERROR: All {len(errors)} source(s) failed extraction:", file=sys.stderr)
         for path, err in errors:
             print(f"  - {path.name}: {err}", file=sys.stderr)
         sys.exit(1)
-        
-    # Combine texts
+
+    # 合并文本
     consolidated_text = "".join(combined_texts).strip()
-    
-    # Write combined text
+
+    # 写出合并后的文本
     OUTPUT_TEXT.write_text(consolidated_text, encoding="utf-8")
-    
-    # Consolidate metadata
+
+    # 汇总元数据
     total_file_size_mb = sum(src["file_size_mb"] for src in extracted_sources)
     total_pages = sum(src["pages"] for src in extracted_sources)
     total_chars = len(consolidated_text)
     total_words = len(consolidated_text.split())
     total_tokens = estimate_tokens(consolidated_text)
-    
-    # Detect structure from source content only. The generated SOURCE banners in
-    # full_text.txt use rows of "=", which can otherwise become phantom setext
-    # headings and make the result depend on the source-path length.
+
+    # 只从来源正文检测结构。full_text.txt 里生成的 SOURCE 横幅是一排
+    # "="，否则它们会变成幻影 setext 标题，让检测结果依赖于来源路径的
+    # 长度。
     structure_text = "\n\n".join(src["text"] for src in extracted_sources)
     consolidated_structure = detect_structure(structure_text)
-    # has_toc is a per-source property, so it has to be combined per source
-    # rather than re-derived from the corpus. detect_structure only scans the
-    # first ~30k chars, because a table of contents sits in a book's front
-    # matter -- but on a consolidated corpus that window covers only the FIRST
-    # source, so a ToC in any later book was invisible and the answer flipped on
-    # input order alone. Each per-source result already scanned its own front
-    # matter, so OR them.
+    # has_toc 是按来源各自成立的属性，必须按来源逐个合并，而不能从合并
+    # 后的语料上重新推导。detect_structure 只扫描前 ~30k 字符，因为目录
+    # 位于一本书的卷首 —— 但在合并后的语料上，这个窗口只覆盖第一个
+    # 来源，后面任何一本书里的目录都不可见，答案会仅随输入顺序翻转。
+    # 每个单来源结果都已经扫描过各自的卷首，所以直接对它们取或（OR）。
     consolidated_structure["has_toc"] = any(
         src["has_toc"] for src in extracted_sources
     )
-    
+
     metadata = {
         "source_file": "Consolidated from multiple sources" if len(extracted_sources) > 1 else extracted_sources[0]["source_file"],
         "filename": "multi-source" if len(extracted_sources) > 1 else extracted_sources[0]["filename"],
@@ -926,16 +799,16 @@ def main():
         ],
         **consolidated_structure,
     }
-    
-    # encoding="utf-8" is required, not cosmetic: the payload is dumped with
-    # ensure_ascii=False, so any non-ASCII chapter heading, filename or path
-    # reaches the encoder verbatim. Without it, write_text() falls back to the
-    # locale encoding and raises UnicodeEncodeError on a Windows cp1252 host or
-    # under LC_ALL=C — after every source has already been extracted.
+
+    # encoding="utf-8" 是必需的，不是装饰：元数据用 ensure_ascii=False
+    # 转储，任何非 ASCII 的章节标题、文件名或路径都会原样到达编码器。
+    # 缺了它，write_text() 会退回 locale 编码，在 Windows cp1252 主机或
+    # LC_ALL=C 环境下抛出 UnicodeEncodeError —— 而且是在所有来源都已
+    # 提取完毕之后。
     OUTPUT_META.write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    
+
     page_line = f"   Total Pages: {total_pages}"
     print("\nExtraction complete:")
     print(f"   Sources : {len(extracted_sources)} processed")
@@ -950,10 +823,9 @@ def main():
     if consolidated_structure["chapters_method"] == "structural" and (
         consolidated_structure["chapters_detected"] <= 1 and total_words > 5000
     ):
-        # Numeric "Chapter N" headings found nothing and the structural fallback
-        # came back with one section for a document of real length. That pairing
-        # is a detection failure far more often than it is a one-chapter book,
-        # and it is invisible in the output it produces.
+        # 数字编号的 "第N章" 标题一无所获，而结构性兜底对一份相当长的
+        # 文档只找回一个小节。这种组合是检测失败的可能性远大于它真是
+        # 一本只有一章的书，而且这个失败在它产出的输出里并不可见。
         print(
             "   WARN    : only one section found in a document this long — chapter "
             "detection likely failed; check the headings before generating."
