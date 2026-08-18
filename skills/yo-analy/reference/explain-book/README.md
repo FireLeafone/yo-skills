@@ -40,14 +40,14 @@
 
 产出默认写到当前项目的 `explain-book/<slug>/` 目录（可指定其他位置）—— 是一组可直接阅读、可被 agent 按需查询的普通 markdown 文档，**不会安装成新的 skill**。
 
-工作流（内容类型识别 → 文本提取 → 成本预估 → 逐章解析 → 支撑文件 → 主索引 → 安全扫描）详见 [SKILL.md](SKILL.md)；章节模板、支撑文件规格与更新/合并流程在 [references/](references/) 下。
+工作流（内容类型识别 → 文本提取 → 成本预估 → 逐章解析 → 支撑文件 → 主索引 → 安全扫描）详见 [SKILL.md](SKILL.md)；章节模板、支撑文件规格、主 README 模板与更新/合并流程在 [references/](references/) 下。
 
 ## 仓库结构
 
 ```
 explain-book/
 ├── SKILL.md              # skill 定义 + 分步解析规范（生成器规格）
-├── references/           # 章节模板、支撑文件规格、更新/合并流程（按需加载）
+├── references/           # 章节模板、支撑文件规格、主 README 模板、更新/合并流程（按需加载）
 ├── scripts/
 │   └── extract.py        # 提取入口（薄封装）
 ├── explain_book/         # 提取器包（vendored from book-to-skill，MIT）

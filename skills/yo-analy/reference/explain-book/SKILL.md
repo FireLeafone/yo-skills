@@ -47,6 +47,30 @@ description: "将书籍与文档（PDF、DOCX、HTML、Markdown、纯文本等�
 
 ---
 
+## 解析进度
+
+复制此清单并跟踪进度（本流程跨多轮交互与多次工具调用，每完成一步即勾选）：
+
+```text
+解析进度：
+- [ ] Step 0：输入检查（识别 INPUT_PATHS / DOCSET_NAME / 模式）
+- [ ] Step 1：校验输入
+- [ ] Step 1.5：内容类型识别（⏸ 等用户确认 BOOK_KIND / EXTRACT_MODE）
+- [ ] Step 2：提取文本（记录 FULL_TEXT_PATH 具体值）
+- [ ] Step 2.5：成本预估（⏸ 等用户确认继续，或切换"只解析"）
+- [ ] Step 3：分析全书结构（模式 2 在此产出报告并停止）
+- [ ] Step 4：询问用途（⏸ 等用户回答，推导 DEPTH）
+- [ ] Step 5：确定 slug 与输出位置（目录已存在时 ⏸ 等用户三选一）
+- [ ] Step 6–8：目录结构 → 逐章解析 → 支撑文件
+- [ ] Step 9：主 README.md
+- [ ] Step 9.5：安全扫描
+- [ ] Step 10：清理与报告
+```
+
+模式 3（更新/合并）改按 [references/update-merge.md](references/update-merge.md) 的 6 步流程跟踪。
+
+---
+
 ## 解析文档集的位置
 
 产出写到 `<输出目录>/<slug>/`：
@@ -111,22 +135,15 @@ slug 的确定见 Step 5。
 
 ## Step 2 — 提取文本
 
-运行提取脚本。脚本就在本 skill 目录内：**优先用本 SKILL.md 所在目录的 `scripts/extract.py`**；仅当该路径不可得（如 skill 被裁剪分发）时，再按候选列表探测：
+运行提取脚本。脚本就在本 skill 目录内：**优先用本 SKILL.md 所在目录的 `scripts/extract.py`**；仅当该路径不可得（如 skill 被裁剪分发）时，再按候选列表探测（本 skill 通常以 yo-analy 子技能形式安装）：
 
 ```bash
 SCRIPT_PATH=""
 for candidate in \
   "<本SKILL.md所在目录>/scripts/extract.py" \
-  "$HOME/.kimi-code/skills/explain-book/scripts/extract.py" \
-  "$HOME/.copilot/skills/explain-book/scripts/extract.py" \
-  "$HOME/.agents/skills/explain-book/scripts/extract.py" \
-  "$HOME/.claude/skills/explain-book/scripts/extract.py" \
-  ".kimi-code/skills/explain-book/scripts/extract.py" \
-  ".github/skills/explain-book/scripts/extract.py" \
-  ".claude/skills/explain-book/scripts/extract.py" \
-  ".agents/skills/explain-book/scripts/extract.py" \
-  "$HOME/.config/agents/skills/explain-book/scripts/extract.py" \
-  "$HOME/.config/amp/skills/explain-book/scripts/extract.py"
+  ".agents/skills/yo-analy/reference/explain-book/scripts/extract.py" \
+  ".claude/skills/yo-analy/reference/explain-book/scripts/extract.py" \
+  "$HOME/.kimi-code/plugins/managed/yo-skills/skills/yo-analy/reference/explain-book/scripts/extract.py"
 do
   if [ -f "$candidate" ]; then
     SCRIPT_PATH="$candidate"
@@ -151,11 +168,13 @@ fi
 
 **提示 — 环境预检：** 运行 `"$PYTHON_BIN" "$SCRIPT_PATH" --check` 可打印各格式的提取器安装报告及缺失项的安装命令，不处理任何文件。用户报告安装或质量问题时用它。
 
-产出：
-- `<tempdir>/explain_book_work/full_text.txt` — 全部来源合并文本，来源间有清晰分界。
-- `<tempdir>/explain_book_work/metadata.json` — 合并体量、词数、页数、token 估算，以及逐来源的 `sources` 明细。
+产出（工作目录 `WORKDIR` 默认为 `<系统临时目录>/explain_book_work/`，可用环境变量 `EXPLAIN_BOOK_WORKDIR` 覆盖）：
+- `$WORKDIR/full_text.txt` — 全部来源合并文本，来源间有清晰分界。其完整路径记为 `FULL_TEXT_PATH`，Step 2.6 / 3 / 7 / 8 都要用它。
+- `$WORKDIR/metadata.json` — 合并体量、词数、页数、token 估算，以及逐来源的 `sources` 明细。
 
-读取 `metadata.json` 查看结果。（工作目录可用环境变量 `EXPLAIN_BOOK_WORKDIR` 覆盖。）
+读取 `metadata.json` 查看结果。
+
+**注意：shell 变量不跨命令保留。** 每次 Bash 调用都是新 shell —— 后续步骤（2.6、3、7、9.5、10）引用 `FULL_TEXT_PATH`、`WORKDIR`、脚本路径时，用本步记住的具体路径值重新拼接，不要依赖上一条命令里的变量。
 
 ---
 
@@ -339,72 +358,30 @@ mkdir -p "<输出目录>/<slug>/settings"
 **关键 TOKEN 预算：主 README.md 正文 < 4,000 tokens。**
 压缩截断从尾部开始 —— 最重要的内容放最前。
 
-创建 `<输出目录>/<slug>/README.md`（普通 markdown，**不要 frontmatter**）：
+创建 `<输出目录>/<slug>/README.md`（普通 markdown，**不要 frontmatter**）。完整模板见 [references/main-readme-template.md](references/main-readme-template.md)；契约要点：
 
-```markdown
-# 《<书名>》解析
-**作者**：<作者> | **类型**：<虚构/非虚构> | **页数**：~<N> | **章节**：<N> | **生成日期**：<YYYY-MM-DD>
-
-## 如何使用本解析文档集
-
-- **先读本文件** —— 下方核心速览覆盖全书最高密度的内容
-- **查具体主题** —— 按下方主题索引找到对应章节文件，读它再回答；不凭印象编造
-- **浏览全部** —— 章节索引列全部章节，支撑文件列全部跨章提炼
-
----
-
-## 核心速览
-<!-- ~2,000 tokens。虚构类：世界观一句话 + 主线脉络 + 核心体系速查表 +
-     主要人物一行式速查 + 作者风格一句话。非虚构类：作者最重要的命名框架
-     与原则工具箱。保留原名。写成"当 Y 时用 X"。这是工具箱，不是摘要。 -->
-
-<生成约 2,000 tokens 的最关键内容>
-
----
-
-## 章节索引
-
-| # | 标题 | 关键框架/内容 |
-|---|------|----------------|
-| [ch01](chapters/ch01-<slug>.md) | <标题> | <内容1>、<内容2> |
-...
-
-## 主题索引
-
-<!-- 按字母/拼音序。重要术语/人物/体系 → 覆盖它们的章节。 -->
-- **<术语/人物>** → ch<N>[, ch<N>]
-
-## 支撑文件
-
-<只列实际生成的文件>
-- [outline.md](outline.md) —— 全书框架大纲
-- [settings/characters.md](settings/characters.md) —— 人物档案
-- [settings/system.md](settings/system.md) —— 等级与体系
-- [settings/world.md](settings/world.md) —— 社会与环境
-- [mental-models.md](mental-models.md) —— 心智模型
-- [principles.md](principles.md) —— 原则
-- [writing-style.md](writing-style.md) —— 写作风格解剖
-- [techniques.md](techniques.md) —— 技巧
-- [anti-patterns.md](anti-patterns.md) —— 反模式
-- [glossary.md](glossary.md) —— 术语与专有名词
-
----
-
-## 范围与限制
-
-本解析文档集只覆盖原书内容。落地实现请结合你的项目工具；超出原书的主题，
-查阅其他资料或直接问 agent。条目与原文有出入时，以原书为准。
-```
+- **元数据行**：书名、作者、类型、页数、章节数、生成日期
+- **如何使用本解析文档集**：先读本文件 / 按主题索引定位再读章节文件 / 浏览全部索引
+- **核心速览**（~2,000 tokens，全文最重的部分）：虚构类 = 世界观一句话 + 主线脉络 + 核心体系速查表 + 主要人物一行式速查 + 作者风格一句话；非虚构 = 作者最重要的命名框架与原则工具箱。保留原名，写成"当 Y 时用 X"—— 是工具箱，不是摘要
+- **章节索引**：表格链接全部 `chapters/` 文件
+- **主题索引**：按字母/拼音序，术语/人物/体系 → 覆盖章节号（agent 的关键导航，质量规则 8）
+- **支撑文件**：只列实际生成的文件
+- **范围与限制**：只覆盖原书内容；条目与原文有出入时以原书为准
 
 ---
 
 ## Step 9.5 — 扫描生成的文档集
 
-报告成功或把文档集交给他人之前，运行建议性安全扫描（生成的内容源自外部书籍文本，扫描提示词注入与越权表述）：
+报告成功或把文档集交给他人之前，运行建议性安全扫描（生成的内容源自外部书籍文本，扫描提示词注入与越权表述）。命令自包含 —— 重新解析 python 与 skill 根目录，不依赖 Step 2 的 shell 变量：
 
 ```bash
-SKILL_CONVERTER_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
-"$PYTHON_BIN" "$SKILL_CONVERTER_ROOT/tools/scan_generated_skill.py" "<输出目录>/<slug>"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  PYTHON_BIN="python"
+fi
+EXPLAIN_BOOK_ROOT="<本SKILL.md所在目录>"
+
+"$PYTHON_BIN" "$EXPLAIN_BOOK_ROOT/tools/scan_generated_skill.py" "<输出目录>/<slug>"
 ```
 
 扫描器非零退出时，停止并请人工复核其文件/行号发现。不要默默改写生成的文件；在发现被解决或明确接受前，不要交付或传播该文档集。
@@ -413,22 +390,15 @@ SKILL_CONVERTER_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 
 ## Step 10 — 清理与报告
 
-```bash
-PYTHON_BIN="${PYTHON_BIN:-python3}"
-if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-  PYTHON_BIN="python"
-fi
+清理提取工作目录（保留 `EXPLAIN_BOOK_WORKDIR` 覆盖语义；只删该目录，不碰其他路径）：
 
-"$PYTHON_BIN" - <<'PY'
-import os
-import shutil
-import tempfile
-from pathlib import Path
-shutil.rmtree(
-    os.environ.get("EXPLAIN_BOOK_WORKDIR", Path(tempfile.gettempdir()) / "explain_book_work"),
-    ignore_errors=True,
-)
-PY
+```bash
+if [ -z "$EXPLAIN_BOOK_WORKDIR" ]; then
+  PYTHON_BIN="${PYTHON_BIN:-python3}"
+  command -v "$PYTHON_BIN" >/dev/null 2>&1 || PYTHON_BIN="python"
+  EXPLAIN_BOOK_WORKDIR="$("$PYTHON_BIN" -c 'import os,tempfile;print(os.path.join(tempfile.gettempdir(),"explain_book_work"))')"
+fi
+rm -rf "$EXPLAIN_BOOK_WORKDIR"
 ```
 
 然后向用户报告：
