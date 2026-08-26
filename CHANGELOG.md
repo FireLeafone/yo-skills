@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.5.0 (2026-08-26)
+
+- feat: add tell-me, unslop
+- feat: comment update
+- feat: optimizer explain-book
+- feat: update explain-book
+- Merge branch 'dev' of https://github.com/FireLeafone/yo-skills into dev
+- feat: init explain-book
+- Merge branch 'main' into dev
+- chore: config
+- feat: test novel-style
+- feat: test novel-style
+- feat: init novel-style
+- feat: update novel-write
+- feat: update skill-optimizer
+- chore: update
+- merge: novel-write darwin 优化（dim4检查点 + dim3失败模式）
+- chore(darwin): novel-write 优化成果卡片 + results.tsv 日志
+- optimize novel-write: dim3 失败模式三段式 fallback 表
+- optimize novel-write: dim4 显性 🔴 CHECKPOINT/🛑 STOP 视觉标记
+- feat: add darwin-skill, update novel-write
+- feat: rm ai style refactor, update novel skills
+
 ## 1.4.0 (2026-08-15)
 
 - chore: github update to gitee
