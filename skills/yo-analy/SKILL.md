@@ -23,7 +23,7 @@ Yo-Analy 是多个分析辅助技能的集合入口。根据你的需求，自�
 | **grill-me** | `reference/grill-me/` | 对方案或设计反复追问，逐条厘清决策树直至达成共识 | "严格审查我"、"压力测试方案"、"帮我挑设计毛病" |
 | **extract-chat** | `reference/extract-chat/` | 将当前对话精简为方案/设计文档，供下一位 agent 接手 | "总结这次对话"、"总结对话给下个 agent 用" |
 | **tell-story** | `reference/tell-story/` | 用寓言故事的方式间接讲解概念，延迟揭示+逐一对照解释 | "用故事讲XX"、"帮我理解XX"、"怎么通俗解释XX" |
-| **tell-me** | `reference/tell-me/` | 用小孩都能听懂的方式解释主题：产出大量图片、代码形状草图、重点突出的极简 HTML 文档，面向完全不懂的读者 | "用最简单的话讲XX"、"小孩都能听懂"、"完全不懂XX"、"用图片解释原理" |
+| **tell-me** | `reference/tell-me/` | 用小白都能听懂的方式解释主题：产出大量图片、代码形状草图、重点突出的极简 HTML 文档，面向完全不懂的读者 | "用最简单的话讲XX"、"小白都能听懂"、"完全不懂XX"、"用图片解释原理" |
 | **skill-optimizer** | `reference/skill-optimizer/` | 审查并优化现有 skill（触发描述、工作流、确认门槛、结构拆分），先审查出计划、确认后再改 | "优化这个 skill"、"检查 skill 质量"、"重构技能说明" |
 
 **理解与文档**：
@@ -98,7 +98,7 @@ flowchart LR
 | 保存方案、设计文档给后续、docs/yo-analy | **extract-chat** |
 | 用故事讲、帮我理解、通俗解释、原理是什么、怎么理解、讲个故事 | **tell-story** |
 | 概念学习、设计模式讲解、技术原理故事化 | **tell-story** |
-| 用最简单的话讲、小孩都能听懂、完全不懂、图片解释、极简讲解、可视化解说、tell me | **tell-me** |
+| 用最简单的话讲、小白都能听懂、完全不懂、图片解释、极简讲解、可视化解说、tell me | **tell-me** |
 | 优化 skill、检查 skill 质量、改进 skill、重构技能说明、skill 审查 | **skill-optimizer** |
 
 **推断步骤：**
@@ -126,7 +126,7 @@ flowchart LR
 
 **extract-chat 与 explain-project 歧义时：** 用户要生成面向仓库的长期协作文档（AGENTS.md 等）→ **explain-project**；用户要沉淀当前会话、供下一位 agent 接续 → **extract-chat**。
 
-**tell-story 与 tell-me 歧义时：** 用户要寓言故事、间接委婉讲解 → **tell-story**；用户要极简图文 HTML、可视化、小孩都能懂 → **tell-me**。
+**tell-story 与 tell-me 歧义时：** 用户要寓言故事、间接委婉讲解 → **tell-story**；用户要极简图文 HTML、可视化、小白都能懂 → **tell-me**。
 
 ## 工作流程
 
