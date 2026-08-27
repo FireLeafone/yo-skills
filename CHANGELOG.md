@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1 (2026-08-27)
+
+- feat: optimize tell-me
+
 ## 1.5.0 (2026-08-26)
 
 - feat: add tell-me, unslop
