@@ -23,6 +23,7 @@ Yo-Novel 是多个小说编写辅助技能的集合入口。根据你的需求�
 | novel-chapters | `reference/novel-chapters/SKILL.md` | 按卷规划小说章节：主题、说明、人物、阶段章节划分与伏笔清单 | "分卷"、"章节规划"、"卷规划"、"划分章节"、"按卷写大纲" |
 | novel-progress | `reference/novel-progress/SKILL.md` | 更新 `progress.md` 进度追踪表（章节、人物、时间线、伏笔） | "更新进度"、"progress.md"、"写完第 X 章"、"标记大纲完成"、"新增伏笔" |
 | novel-style | `reference/novel-style/SKILL.md` | 从一本已有小说逆向提取写作风格档案：联网检索书评 + 多维度总结 + 防跑偏清单，输出 【书名】-style-skill.md | "提取 XX 小说的写作风格"、"分析 XX 文风"、"仿写 XX 风格"、"生成 XX 风格指南"、"XX 风格 skill"、"novel style guide" |
+| novel-storyline | `reference/novel-storyline/SKILL.md` | 把小说/书籍/文章总结为 Git 分支式"人物进程图"交互 HTML：人物彩色进程线 + 事件节点 + 交汇分开 + 时间轴 + 图例显隐 | "人物进程图"、"人物情节线"、"故事线可视化"、"把小说画成图"、"总结小说人物线"、"人物命运走向" |
 
 ## 路由规则
 
@@ -37,6 +38,7 @@ Yo-Novel 是多个小说编写辅助技能的集合入口。根据你的需求�
 - `/yo-novel novel-chapters` → 使用 `reference/novel-chapters/SKILL.md`
 - `/yo-novel novel-progress` → 使用 `reference/novel-progress/SKILL.md`
 - `/yo-novel novel-style` → 使用 `reference/novel-style/SKILL.md`
+- `/yo-novel novel-storyline` → 使用 `reference/novel-storyline/SKILL.md`
 
 ### 2. 自动推断
 
@@ -54,6 +56,8 @@ Yo-Novel 是多个小说编写辅助技能的集合入口。根据你的需求�
   - 关键词示例："更新进度"、"进度表"、"progress.md"、"写完第 X 章"、"标记大纲完成"、"新增伏笔"、"回收伏笔"
 - **提取风格 / 分析文风 / 仿写风格 / 风格指南** → `novel-style`
   - 关键词示例："提取小说风格"、"分析写作风格"、"总结文风"、"仿写 XX 风格"、"生成风格指南"、"XX 风格 skill"、"风格档案"、"novel style guide"、"style extraction"、"learn writing style from"
+- **人物进程图 / 故事线可视化 / 人物情节总结** → `novel-storyline`
+  - 关键词示例："人物进程图"、"人物情节线"、"故事线可视化"、"人物关系时间线"、"把小说画成图"、"总结小说里每个人物的经历"、"人物命运走向"、"git 分支图 人物"、"storyline visualization"、"character map"
 
 ## 工作流程
 
