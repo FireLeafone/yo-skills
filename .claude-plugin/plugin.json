@@ -1,6 +1,6 @@
 {
   "name": "yo-skills",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "Personal agent skills library: reusable workflows for Claude Code, Codex, and Cursor.",
   "author": {
     "name": "NARUTOne"
