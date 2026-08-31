@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人物进程图</title>
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --panel: #ffffff;
+    --ink: #343a40;
+    --ink-soft: #868e96;
+    --line-grid: #e9e5dd;
+    --accent: #b08968;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  header {
+    padding: 18px 28px 12px;
+    border-bottom: 1px solid #e7e2d9;
+    background: var(--panel);
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  }
+  header h1 { font-size: 20px; font-weight: 600; letter-spacing: 1px; }
+  header .sub { font-size: 12px; color: var(--ink-soft); }
+  header .spacer { flex: 1; }
+  header button {
+    font-size: 12px; padding: 4px 12px; border-radius: 14px; cursor: pointer;
+    border: 1px solid #d8d2c6; background: #fff; color: var(--ink);
+  }
+  header button:hover { border-color: var(--accent); color: var(--accent); }
+
+  #app { display: flex; height: calc(100vh - 62px); }
+
+  /* 图例 */
+  #legend {
+    width: 216px; flex: none; order: 2;
+    background: var(--panel); border-left: 1px solid #e7e2d9;
+    overflow-y: auto; padding: 14px 12px;
+  }
+  #legend h2 { font-size: 13px; color: var(--ink-soft); font-weight: 600; margin: 4px 6px 10px; }
+  .lg-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 8px; cursor: pointer; user-select: none;
+  }
+  .lg-item:hover { background: #f4f0e8; }
+  .lg-item.off { opacity: 0.35; }
+  .lg-item.off .lg-name { text-decoration: line-through; }
+  .lg-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 2px rgba(255,255,255,.4); }
+  .lg-name { font-size: 14px; }
+  .lg-badge {
+    font-size: 10px; padding: 1px 6px; border-radius: 8px; flex: none;
+    background: #f1ede4; color: #8a7d63;
+  }
+  .lg-badge.main { background: #ffe3e3; color: #c92a2a; }
+  .lg-first { margin-left: auto; font-size: 10px; color: var(--ink-soft); flex: none; }
+
+  /* 图区 */
+  #chart-wrap { flex: 1; order: 1; overflow: auto; }
+  svg { display: block; }
+
+  .axis-label { font-size: 11px; fill: var(--ink-soft); }
+  .char-name { font-size: 13px; font-weight: 600; }
+  .char-name.minor { font-weight: 400; fill: var(--ink-soft); }
+  .ev-label { font-size: 11px; fill: #6b6455; }
+  .ev-label.big { font-size: 12px; font-weight: 600; fill: #4a4437; }
+  .end-note { font-size: 10px; fill: var(--ink-soft); font-style: italic; }
+  .node { cursor: pointer; }
+  .node:hover { filter: brightness(1.15); }
+
+  /* 悬浮提示 */
+  #tooltip {
+    position: fixed; display: none; z-index: 99; pointer-events: none;
+    max-width: 300px; padding: 10px 12px; border-radius: 10px;
+    background: rgba(33,37,41,.94); color: #f1f3f5; font-size: 12px; line-height: 1.6;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  }
+  #tooltip .t-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  #tooltip .t-chapter { color: #ffd8a8; margin-bottom: 4px; }
+  #tooltip .t-chars span {
+    display: inline-block; margin: 0 6px 2px 0; padding: 0 7px;
+    border-radius: 9px; font-size: 11px; background: rgba(255,255,255,.14);
+  }
+  #tooltip .t-desc { color: #ced4da; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="novel-title">人物进程图</h1>
+  <span class="sub" id="novel-sub">Git 分支式人物情节可视化</span>
+  <span class="spacer"></span>
+  <button id="btn-all">全部显示</button>
+  <button id="btn-main">仅看主角</button>
+</header>
+
+<div id="app">
+  <div id="chart-wrap"><svg id="chart" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <aside id="legend"><h2>人物图例（点击显隐）</h2></aside>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+'use strict';
+
+/* =====================================================================
+ * 数据结构
+ * ---------------------------------------------------------------------
+ * characters[]: 人物
+ *   id      唯一标识
+ *   name    姓名
+ *   role    main=主角(主线,加粗) / core=核心 / support=配角 / minor=次要(灰线)
+ *   color   线的颜色（minor 可省略,统一灰）
+ *   first   出场回目 —— 线从该时间刻度开始
+ *   end     退场回目（可选）—— 线在此收尾并画终止符
+ *   endNote 退场说明（可选）
+ *
+ * events[]: 情节事件
+ *   id          唯一标识
+ *   chapter     回目（时间轴坐标）
+ *   title       事件名
+ *   desc        事件描述（tooltip）
+ *   importance  1~3,决定节点大小
+ *   characters  参与人物 id 列表;多人时各线在此交汇为一个节点
+ * =================================================================== */
+const DATA = {
+  "title": "铁血残明",
+  "subtitle": "基于 29-31、112-114 章节选整理",
+  "chapterMax": 114,
+  "chapterUnit": "章",
+  "characters": [
+    {
+      "id": "pangyu",
+      "name": "庞雨",
+      "role": "main",
+      "color": "#e03131",
+      "first": 29
+    },
+    {
+      "id": "hexianya",
+      "name": "何仙崖",
+      "role": "core",
+      "color": "#1971c2",
+      "first": 29
+    },
+    {
+      "id": "zhangxianzhong",
+      "name": "张献忠",
+      "role": "core",
+      "color": "#9c36b5",
+      "first": 112
+    },
+    {
+      "id": "tangweimin",
+      "name": "唐为民",
+      "role": "core",
+      "color": "#0c8599",
+      "first": 30
+    },
+    {
+      "id": "yangfangzao",
+      "name": "杨芳蚤",
+      "role": "support",
+      "color": "#c2255c",
+      "first": 29
+    },
+    {
+      "id": "yangerming",
+      "name": "杨尔铭",
+      "role": "support",
+      "color": "#e8590c",
+      "first": 113
+    },
+    {
+      "id": "zhouxiancheng",
+      "name": "周县丞",
+      "role": "support",
+      "color": "#2f9e44",
+      "first": 29
+    },
+    {
+      "id": "xushiliang",
+      "name": "徐士良",
+      "role": "support",
+      "color": "#5c940d",
+      "first": 31
+    },
+    {
+      "id": "ruanjin",
+      "name": "阮劲",
+      "role": "minor",
+      "first": 29
+    },
+    {
+      "id": "jiaoguozha",
+      "name": "焦国柞",
+      "role": "minor",
+      "first": 29
+    },
+    {
+      "id": "zhouyueru",
+      "name": "周月如",
+      "role": "minor",
+      "first": 29
+    },
+    {
+      "id": "suntianxiu",
+      "name": "孙田秀",
+      "role": "minor",
+      "first": 29
+    },
+    {
+      "id": "zhenglao",
+      "name": "郑老",
+      "role": "minor",
+      "first": 30
+    },
+    {
+      "id": "wangdazhuang",
+      "name": "王大壮",
+      "role": "minor",
+      "first": 31
+    },
+    {
+      "id": "heyilong",
+      "name": "贺一龙",
+      "role": "minor",
+      "first": 112
+    },
+    {
+      "id": "gongbing",
+      "name": "马踏石弓兵",
+      "role": "minor",
+      "first": 112
+    },
+    {
+      "id": "wangwenyao",
+      "name": "王文耀",
+      "role": "minor",
+      "first": 114
+    }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "chapter": 29,
+      "importance": 2,
+      "title": "接票下乡",
+      "desc": "代知县杨芳蚤发出牌票，庞雨与快手阮劲赴南塘里比较钱粮、催缴欠粮，何仙崖随行帮闲。",
+      "characters": [
+        "pangyu",
+        "ruanjin",
+        "hexianya",
+        "yangfangzao"
+      ]
+    },
+    {
+      "id": "e2",
+      "chapter": 29.5,
+      "importance": 3,
+      "title": "孙家逼税",
+      "desc": "阮劲威逼花户孙田余补齐欠粮，帮闲杀鸡施压，信和典铺乘机放高利贷收田；周月如求情被庞雨劝止。",
+      "characters": [
+        "pangyu",
+        "ruanjin",
+        "hexianya",
+        "zhouyueru",
+        "suntianxiu"
+      ]
+    },
+    {
+      "id": "e3",
+      "chapter": 29.8,
+      "importance": 2,
+      "title": "田秀赠蛋",
+      "desc": "庞雨把随身沙壅分给孙家孩子，孙田秀回赠一枚自拣的秧鸡蛋报恩。",
+      "characters": [
+        "pangyu",
+        "suntianxiu"
+      ]
+    },
+    {
+      "id": "e4",
+      "chapter": 30,
+      "importance": 3,
+      "title": "靠背求柜",
+      "desc": "庞雨向户房典吏唐为民献上自制靠背，唐为民感其心意，许他秋粮征收的柜夫肥缺。",
+      "characters": [
+        "pangyu",
+        "tangweimin"
+      ]
+    },
+    {
+      "id": "e5",
+      "chapter": 30.5,
+      "importance": 2,
+      "title": "岳季命案",
+      "desc": "吴乡宦家奴郑老在清风市当街打死挑夫岳季，逃入吴府；焦国柞率快班缉拿，吴府闭门不纳。",
+      "characters": [
+        "zhenglao",
+        "jiaoguozha",
+        "hexianya"
+      ]
+    },
+    {
+      "id": "e6",
+      "chapter": 31,
+      "importance": 2,
+      "title": "堂议缉凶",
+      "desc": "杨芳蚤扣下安靖地方的大帽子，压典史徐士良限期缉凶，与周县丞议定大张声势、敷衍上宪。",
+      "characters": [
+        "yangfangzao",
+        "xushiliang",
+        "zhouxiancheng"
+      ]
+    },
+    {
+      "id": "e7",
+      "chapter": 31.5,
+      "importance": 1,
+      "title": "三班推诿",
+      "desc": "皂班王大壮与快班李班头为缉凶职责当堂争执，徐士良强令快班缉凶、壮皂两班守六门。",
+      "characters": [
+        "xushiliang",
+        "wangdazhuang",
+        "jiaoguozha",
+        "pangyu",
+        "hexianya"
+      ]
+    },
+    {
+      "id": "e8",
+      "chapter": 31.7,
+      "importance": 1,
+      "title": "南门收粮",
+      "desc": "城中因命案无人敢私卖粮，庞雨反其道行之，在南门外以六钱一石低价收粮囤货。",
+      "characters": [
+        "pangyu",
+        "hexianya"
+      ]
+    },
+    {
+      "id": "e9",
+      "chapter": 31.9,
+      "importance": 3,
+      "title": "田秀卖身",
+      "desc": "庞雨在南门外人口市场，遇见头插草标、跪地卖身的孙田秀。",
+      "characters": [
+        "pangyu",
+        "suntianxiu"
+      ]
+    },
+    {
+      "id": "e10",
+      "chapter": 112,
+      "importance": 2,
+      "title": "箭慑女贼",
+      "desc": "凶悍女贼震慑城头，庞雨悬赏十两，马踏石巡检司弓兵一箭中其面门，众人乱箭射杀，士气大振。",
+      "characters": [
+        "pangyu",
+        "gongbing",
+        "hexianya"
+      ]
+    },
+    {
+      "id": "e11",
+      "chapter": 112.5,
+      "importance": 2,
+      "title": "献忠定策",
+      "desc": "张献忠与革里眼贺一龙在紫来桥头察看桐城城防，贺一龙本不愿打，张献忠决意攻打东墙。",
+      "characters": [
+        "zhangxianzhong",
+        "heyilong"
+      ]
+    },
+    {
+      "id": "e12",
+      "chapter": 113,
+      "importance": 2,
+      "title": "识破佯攻",
+      "desc": "流寇分兵南北两翼，庞雨识破其无攻城器械、意在牵制，坚持主力不动、重点布防东墙。",
+      "characters": [
+        "pangyu",
+        "hexianya"
+      ]
+    },
+    {
+      "id": "e13",
+      "chapter": 113.5,
+      "importance": 3,
+      "title": "竹梯攻防",
+      "desc": "流寇抬竹梯强攻东墙，悬帘尽挡箭雨，社兵以顶杆架梯、石雨灰瓶砸退敌军，无一人登上城头。",
+      "characters": [
+        "pangyu",
+        "hexianya",
+        "gongbing"
+      ]
+    },
+    {
+      "id": "e14",
+      "chapter": 114,
+      "importance": 2,
+      "title": "首战告捷",
+      "desc": "首波攻城被击退，铜锣收兵；王文耀等士绅生员城头督战，全城百姓运砖送饭，杨尔铭、周县丞登城劳军。",
+      "characters": [
+        "pangyu",
+        "yangerming",
+        "zhouxiancheng",
+        "wangwenyao"
+      ]
+    },
+    {
+      "id": "e15",
+      "chapter": 114.5,
+      "importance": 3,
+      "title": "火雨夜袭",
+      "desc": "子夜流寇数百弓手火箭齐射，干棉被悬帘与草厂尽燃，三千余火箭化作漫天火雨倾泻城内，城防危殆。",
+      "characters": [
+        "pangyu"
+      ]
+    }
+  ]
+};
+
+/* DATA 结构:
+ * { title, subtitle?, chapterMax, chapterUnit?, characters[], events[] }
+ * 字段详见 SKILL.md 的数据结构说明 */
+document.getElementById('novel-title').textContent = `《${DATA.title}》人物进程图`;
+document.title = `《${DATA.title}》人物进程图`;
+if (DATA.subtitle) document.getElementById('novel-sub').textContent = DATA.subtitle;
+
+/* ============================ 布局参数 ============================ */
+const CFG = {
+  leftPad: 130,      // 左侧留给出场人物名
+  rightPad: 90,
+  topPad: 92,
+  laneH: 64,         // 每条人物线的纵向间距
+  bottomPad: 120,    // 底部时间轴区域
+  pxPerChapter: 16,
+  minorColor: '#adb5bd',
+};
+const W = CFG.leftPad + DATA.chapterMax * CFG.pxPerChapter + CFG.rightPad;
+const H = CFG.topPad + DATA.characters.length * CFG.laneH + CFG.bottomPad;
+
+const xOf = chapter => CFG.leftPad + chapter * CFG.pxPerChapter;
+const laneOf = i => CFG.topPad + i * CFG.laneH;
+const colorOf = ch => ch.color || CFG.minorColor;
+const strokeW = ch => ch.role === 'main' ? 4 : ch.role === 'minor' ? 2 : 2.6;
+const nodeR = ev => 5 + ev.importance * 2.4;
+
+/* 平滑曲线（Catmull-Rom 转贝塞尔） */
+function smoothPath(pts) {
+  if (pts.length < 2) return '';
+  let d = `M ${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i],
+          p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C ${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/* ============================ 状态 ============================ */
+const visible = new Set(DATA.characters.map(c => c.id));
+let hoverChar = null;
+
+/* ============================ 渲染 ============================ */
+const svg = document.getElementById('chart');
+const NS = 'http://www.w3.org/2000/svg';
+
+function render() {
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML = '';
+
+  const chars = DATA.characters.map((c, i) => ({ ...c, lane: laneOf(i), on: visible.has(c.id) }));
+  const charById = Object.fromEntries(chars.map(c => [c.id, c]));
+  const axisY = CFG.topPad + chars.length * CFG.laneH + 46;
+
+  /* --- 事件可见性 & 交汇节点纵坐标（可见参与者车道的均值） --- */
+  const events = DATA.events
+    .map(ev => {
+      const parts = ev.characters.filter(id => charById[id] && charById[id].on);
+      if (!parts.length) return null;
+      const y = parts.reduce((s, id) => s + charById[id].lane, 0) / parts.length;
+      return { ...ev, parts, _x: xOf(ev.chapter), _y: y };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.chapter - b.chapter);
+  const evById = Object.fromEntries(events.map(e => [e.id, e]));
+
+  /* --- 底纹:网格线 --- */
+  let g = '';
+  for (let chNum = 1; chNum <= DATA.chapterMax; chNum += 10) {
+    const gx = xOf(chNum);
+    g += `<line x1="${gx}" y1="${CFG.topPad - 44}" x2="${gx}" y2="${axisY}" stroke="var(--line-grid)" stroke-width="1"/>`;
+    g += `<text class="axis-label" x="${gx}" y="${axisY + 22}" text-anchor="middle">第${chNum}${DATA.chapterUnit || '回'}</text>`;
+  }
+  /* 时间轴主线 */
+  g += `<line x1="${CFG.leftPad - 60}" y1="${axisY}" x2="${W - CFG.rightPad + 40}" y2="${axisY}" stroke="#c9c2b4" stroke-width="1.5"/>`;
+  g += `<text class="axis-label" x="${W - CFG.rightPad + 44}" y="${axisY + 4}">${DATA.chapterUnit || '回'}目 →</text>`;
+  /* 事件在时间轴上的刻度 */
+  for (const ev of events) {
+    g += `<line x1="${ev._x}" y1="${axisY - 5}" x2="${ev._x}" y2="${axisY + 5}" stroke="#b3aa97" stroke-width="1.2"/>`;
+  }
+  svg.innerHTML = g;
+
+  /* --- 人物线 --- */
+  const layerLines = document.createElementNS(NS, 'g');
+  const layerNodes = document.createElementNS(NS, 'g');
+  const layerText  = document.createElementNS(NS, 'g');
+  svg.append(layerLines, layerNodes, layerText);
+
+  for (const ch of chars) {
+    if (!ch.on) continue;
+    const evs = events.filter(e => e.parts.includes(ch.id));
+    const color = colorOf(ch);
+    const dim = hoverChar && hoverChar !== ch.id;
+
+    /* 路径点:出场 → (中途回到车道) → 事件节点 → … → 收尾 */
+    const pts = [[xOf(ch.first), ch.lane]];
+    evs.forEach((ev, i) => {
+      const prevX = i === 0 ? pts[0][0] : xOf(evs[i - 1].chapter);
+      if (ev._x - prevX > 74) pts.push([(prevX + ev._x) / 2, ch.lane]);
+      pts.push([ev._x, ev._y]);
+    });
+    const lastEv = evs[evs.length - 1];
+    const lastChap = lastEv ? lastEv.chapter : ch.first;
+    let endPt = null;
+    if (ch.end && ch.end > lastChap) {
+      const ex = xOf(ch.end);
+      if (ex - xOf(lastChap) > 74) pts.push([(xOf(lastChap) + ex) / 2, ch.lane]);
+      pts.push([ex, ch.lane]);
+      endPt = [ex, ch.lane];
+    } else if (lastEv) {
+      pts.push([xOf(lastChap) + 46, ch.lane]);
+      if (ch.end) endPt = [xOf(lastChap), lastEv._y]; // 退场即最后事件
+    }
+
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', smoothPath(pts));
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', strokeW(ch));
+    path.setAttribute('stroke-linecap', 'round');
+    if (ch.role === 'minor') path.setAttribute('stroke-dasharray', '1 0');
+    if (dim) path.setAttribute('opacity', '0.12');
+    layerLines.appendChild(path);
+
+    /* 起点圆点 + 出场人物名 */
+    const startDot = document.createElementNS(NS, 'circle');
+    startDot.setAttribute('cx', pts[0][0]); startDot.setAttribute('cy', pts[0][1]);
+    startDot.setAttribute('r', 4.5); startDot.setAttribute('fill', color);
+    if (dim) startDot.setAttribute('opacity', '0.12');
+    layerNodes.appendChild(startDot);
+
+    const name = document.createElementNS(NS, 'text');
+    name.setAttribute('x', pts[0][0] - 10);
+    name.setAttribute('y', pts[0][1] + 4);
+    name.setAttribute('text-anchor', 'end');
+    name.setAttribute('class', 'char-name' + (ch.role === 'minor' ? ' minor' : ''));
+    name.setAttribute('fill', ch.role === 'minor' ? '' : color);
+    name.textContent = ch.name;
+    if (dim) name.setAttribute('opacity', '0.12');
+    layerText.appendChild(name);
+
+    /* 退场终止符 */
+    if (endPt) {
+      const ring = document.createElementNS(NS, 'circle');
+      ring.setAttribute('cx', endPt[0]); ring.setAttribute('cy', endPt[1]);
+      ring.setAttribute('r', 6); ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', color); ring.setAttribute('stroke-width', 2);
+      const dot = document.createElementNS(NS, 'circle');
+      dot.setAttribute('cx', endPt[0]); dot.setAttribute('cy', endPt[1]);
+      dot.setAttribute('r', 2.2); dot.setAttribute('fill', color);
+      layerNodes.append(ring, dot);
+      if (ch.endNote) {
+        const note = document.createElementNS(NS, 'text');
+        note.setAttribute('x', endPt[0] + 10);
+        note.setAttribute('y', endPt[1] - 8);
+        note.setAttribute('class', 'end-note');
+        note.textContent = ch.endNote;
+        layerText.appendChild(note);
+      }
+    }
+  }
+
+  /* --- 事件节点(多人交汇为一个) + 事件名 --- */
+  const tooltip = document.getElementById('tooltip');
+  events.forEach((ev, i) => {
+    const r = nodeR(ev);
+    /* 节点颜色:参与者中排序最前的人物（主角优先） */
+    const owner = chars.find(c => ev.parts.includes(c.id));
+    const dim = hoverChar && !ev.parts.includes(hoverChar);
+
+    const node = document.createElementNS(NS, 'circle');
+    node.setAttribute('cx', ev._x); node.setAttribute('cy', ev._y);
+    node.setAttribute('r', r);
+    node.setAttribute('fill', colorOf(owner));
+    node.setAttribute('stroke', '#fff');
+    node.setAttribute('stroke-width', 2);
+    node.setAttribute('class', 'node');
+    if (ev.parts.length > 1) { /* 交汇节点加外圈 */
+      const halo = document.createElementNS(NS, 'circle');
+      halo.setAttribute('cx', ev._x); halo.setAttribute('cy', ev._y);
+      halo.setAttribute('r', r + 3.5); halo.setAttribute('fill', 'none');
+      halo.setAttribute('stroke', colorOf(owner));
+      halo.setAttribute('stroke-width', 1);
+      halo.setAttribute('opacity', dim ? '0.06' : '0.4');
+      layerNodes.appendChild(halo);
+    }
+    if (dim) node.setAttribute('opacity', '0.12');
+    layerNodes.appendChild(node);
+
+    /* 事件名:上下交错避免重叠 */
+    const up = i % 2 === 0;
+    const label = document.createElementNS(NS, 'text');
+    label.setAttribute('x', ev._x);
+    label.setAttribute('y', ev._y + (up ? -(r + 9) : r + 16));
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('class', 'ev-label' + (ev.importance >= 3 ? ' big' : ''));
+    label.textContent = ev.title;
+    if (dim) label.setAttribute('opacity', '0.12');
+    layerText.appendChild(label);
+
+    /* tooltip */
+    node.addEventListener('mousemove', e => {
+      const names = ev.characters
+        .map(id => DATA.characters.find(c => c.id === id))
+        .filter(Boolean)
+        .map(c => `<span>${esc(c.name)}</span>`).join('');
+      tooltip.innerHTML =
+        `<div class="t-title">${esc(ev.title)}</div>` +
+        `<div class="t-chapter">第 ${Math.floor(ev.chapter)} ${DATA.chapterUnit || '回'} · ${ev.characters.length > 1 ? '共同经历' : '独自经历'}</div>` +
+        `<div class="t-chars">${names}</div>` +
+        `<div class="t-desc">${esc(ev.desc)}</div>`;
+      tooltip.style.display = 'block';
+      tooltip.style.left = Math.min(e.clientX + 14, window.innerWidth - 320) + 'px';
+      tooltip.style.top = (e.clientY + 14) + 'px';
+    });
+    node.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  });
+}
+
+/* ============================ 图例 ============================ */
+const ROLE_LABEL = { main: '主角', core: '核心', support: '配角', minor: '次要' };
+const legendEl = document.getElementById('legend');
+
+function renderLegend() {
+  legendEl.querySelectorAll('.lg-item').forEach(el => el.remove());
+  for (const ch of DATA.characters) {
+    const item = document.createElement('div');
+    item.className = 'lg-item' + (visible.has(ch.id) ? '' : ' off');
+    item.innerHTML =
+      `<span class="lg-dot" style="background:${colorOf(ch)}"></span>` +
+      `<span class="lg-name">${esc(ch.name)}</span>` +
+      `<span class="lg-badge ${ch.role}">${ROLE_LABEL[ch.role]}</span>` +
+      `<span class="lg-first">第${ch.first}${DATA.chapterUnit || '回'}出场</span>`;
+    item.addEventListener('click', () => {
+      visible.has(ch.id) ? visible.delete(ch.id) : visible.add(ch.id);
+      renderLegend(); render();
+    });
+    item.addEventListener('mouseenter', () => { hoverChar = ch.id; render(); });
+    item.addEventListener('mouseleave', () => { hoverChar = null; render(); });
+    legendEl.appendChild(item);
+  }
+}
+
+document.getElementById('btn-all').addEventListener('click', () => {
+  DATA.characters.forEach(c => visible.add(c.id));
+  renderLegend(); render();
+});
+document.getElementById('btn-main').addEventListener('click', () => {
+  visible.clear(); visible.add('baoyu');
+  renderLegend(); render();
+});
+
+renderLegend();
+render();
+</script>
+</body>
+</html>
