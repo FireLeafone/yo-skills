@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1 (2026-09-04)
+
+- feat: tell-me support introduce md
+- feat: update unslop
+
 ## 1.6.0 (2026-08-31)
 
 - feat: add novel-storyline
