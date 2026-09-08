@@ -144,4 +144,4 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 - `references/frontend-analysis-guide.md` — 前端（Node）项目分析指南
 - `references/backend-analysis-guide.md` — Java / Python 后端分析指南
 - `assets/explain-pm-template.md` — 详尽项目文档模板
-- `scripts/analyze_project.py` — 多生态项目信息探测辅助脚本（与 `agents-docs` 共享）
+- `scripts/analyze_project.py` — 多生态项目信息探测辅助脚本

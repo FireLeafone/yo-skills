@@ -7,7 +7,6 @@ description: 分析代码库并在 `.agents/` 生成 AI 协作文档（AGENTS.md
 
 分析代码库并生成**面向 AI 协作**的项目文档，存放在 `.agents/` 目录（AGENTS.md、rules、skills）。
 
-> 本技能的分析指南与探测脚本位于 `../explain-project/references/`、`../explain-project/scripts/`（跨技能共享，仅维护一份）。
 
 ## 输出结构
 
@@ -85,9 +84,9 @@ ln -sf .agents .claude
 | **JVM / Java** | `pom.xml`、`build.gradle` / `build.gradle.kts` |
 | **Python** | `pyproject.toml`、`requirements.txt`、`setup.py` |
 
-可选运行辅助脚本快速探测（脚本与 `explain-project` 共享）：
+可选运行辅助脚本快速探测：
 ```bash
-python ../explain-project/scripts/analyze_project.py <项目根目录>
+python scripts/analyze_project.py <项目根目录>
 ```
 脚本失败时，手工读取上表中的标记文件。
 
@@ -119,11 +118,11 @@ Read 应用入口附近配置（如 manage.py、.env.example）
 
 ### 4. 识别技术栈与结构
 
-**前端**：识别框架、状态管理、UI 库、构建工具、包管理器。详见 `../explain-project/references/frontend-analysis-guide.md`。
+**前端**：识别框架、状态管理、UI 库、构建工具、包管理器。详见 `references/frontend-analysis-guide.md`。
 
-**后端 Java**：识别 Maven/Gradle、Spring Boot、模块结构。详见 `../explain-project/references/backend-analysis-guide.md` Java 部分。
+**后端 Java**：识别 Maven/Gradle、Spring Boot、模块结构。详见 `references/backend-analysis-guide.md` Java 部分。
 
-**后端 Python**：识别 Django/FastAPI/Flask、依赖管理工具。详见 `../explain-project/references/backend-analysis-guide.md` Python 部分。
+**后端 Python**：识别 Django/FastAPI/Flask、依赖管理工具。详见 `references/backend-analysis-guide.md` Python 部分。
 
 使用 Glob 查找关键目录和文件：
 
@@ -144,15 +143,13 @@ Glob: "**/settings.py" 或 "**/config*.py"
 Glob: "tests/**/*.py" 或 "**/test_*.py"
 ```
 
-> **注意**：分析指南末尾的「输出格式」一节指向**人读项目文档模板**。本技能不要用那个人读模板，而是用 `assets/agent-template.md`（AGENTS.md）与 `assets/rules-templates/*`（rules）填充。
-
 ---
 
 ### 5. 提取开发约定与通用资源
 
-**前端**：样式方案、组件命名、路由与状态管理组织。见 `../explain-project/references/frontend-analysis-guide.md`。
+**前端**：样式方案、组件命名、路由与状态管理组织。见 `references/frontend-analysis-guide.md`。
 
-**后端**：分层/包约定、异常与校验、日志、API 风格。见 `../explain-project/references/backend-analysis-guide.md`。
+**后端**：分层/包约定、异常与校验、日志、API 风格。见 `references/backend-analysis-guide.md`。
 
 提取通用资源（附简短示例）：
 - 前端：公共组件、自定义 Hooks、工具函数、常量、TypeScript 类型
@@ -267,9 +264,9 @@ New-Item -ItemType SymbolicLink -Path .claude -Target .agents
 
 ## 参考资源
 
-- `../explain-project/references/frontend-analysis-guide.md` — 前端（Node）项目分析指南（共享）
-- `../explain-project/references/backend-analysis-guide.md` — Java / Python 后端分析指南（共享）
-- `../explain-project/scripts/analyze_project.py` — 多生态项目信息探测辅助脚本（共享）
+- `references/frontend-analysis-guide.md` — 前端（Node）项目分析指南
+- `references/backend-analysis-guide.md` — Java / Python 后端分析指南
+- `scripts/analyze_project.py` — 多生态项目信息探测辅助脚本
 - `assets/agent-template.md` — Agent 协作文档模板
 - `assets/rules-templates/common-rules.md` — 通用 AI Coding 行为规则模板
 - `assets/rules-templates/coding-style.md` — 代码风格规则模板
