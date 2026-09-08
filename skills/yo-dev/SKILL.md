@@ -26,29 +26,6 @@ Yo Dev 是多个开发辅助技能的集合入口。根据你的需求，自动�
 | **request-code-review** | `reference/request-code-review/` | 派遣审查子代理，验证工作是否符合要求 | "代码审查"、"review 一下"、"合并前检查" |
 | **frontend-code-review** | `reference/frontend-code-review/` | 前端代码审查，检查 React/Vue 规范、交互标准、功能与性能问题 | "前端代码审查"、"review 前端代码"、"检查前端规范" |
 
-## 技能工作流
-
-典型开发流程中，子技能可按以下顺序衔接（非强制，按需选用）：
-
-```mermaid
-flowchart LR
-    A1["to-prd<br/>产品需求文档"]
-    A2["brainstorm<br/>需求与设计"]
-    A1 --> B["impl-plans<br/>实现计划"]
-    A2 --> B
-    B --> C["git-worktrees<br/>隔离工作区"]
-    C --> D{"执行方式"}
-    D -->|"当前会话 + 子代理"| E["subagent-development"]
-    D -->|"独立会话"| F["execute-plans"]
-    E --> G["request-code-review"]
-    F --> G
-```
-
-**入口选择提示：**
-- 需要正式 PRD（KPI、用户故事、验收标准、AI 系统需求）→ **to-prd**
-- 需要交互式方案探索、可视化对比、设计稿确认 → **brainstorm**
-- 可先 **brainstorm** 再 **to-prd** 将结论固化为 PRD，也可直接使用 **to-prd**（其自带探索访谈阶段）
-
 ## 路由规则
 
 ### 1. 显式指定（优先）

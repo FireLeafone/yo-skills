@@ -137,7 +137,7 @@ src/
 
 ## 输出格式
 
-使用提供的模板 `assets/explain-pm-template.md` 作为输出格式，填充分析得到的信息。
+本技能（agents-docs）的分析结果填入 `assets/agent-template.md`（AGENTS.md）与 `assets/rules-templates/*`（rules），不产出人读项目文档。无关章节删除。
 
 ## 注意事项
 

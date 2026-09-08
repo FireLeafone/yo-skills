@@ -89,4 +89,4 @@
 1. 与前端指南相同：**先读依赖与配置文件**，再 Glob 代表性源码。
 2. **不要假设** 一定是 Spring 或 Django：以依赖与目录为准命名技术栈。
 3. 多模块仓库：说明**模块边界**（Maven module、Gradle subproject、Python 多个包）。
-4. 最终章节填充仍以 `assets/explain-pm-template.md` 中「后端适用」小节为准，无关章节删除。
+4. 分析结果填入 `assets/agent-template.md`（AGENTS.md）与 `assets/rules-templates/*`（rules），不产出人读项目文档；无关章节删除。
