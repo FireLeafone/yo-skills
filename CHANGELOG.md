@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0 (2026-09-08)
+
+- feat: explain-project support business
+- feat: agents docs add scripts and references
+- refactor: explaining rename explain
+- feat: split explaining-project and agents-docs
+
 ## 1.6.1 (2026-09-04)
 
 - feat: tell-me support introduce md
