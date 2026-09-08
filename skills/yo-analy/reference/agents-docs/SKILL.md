@@ -1,19 +1,18 @@
 ---
-name: explain-project
-description: 分析代码库（前端 Node/React/Vue 或后端 Java/Python）并在 `.agents/` 生成项目文档（AGENTS.md、rules、skills）。用于新成员上手、项目文档化、生成 AI 协作文档。`.claude` 作为 `.agents` 的软链接。
+name: agents-docs
+description: 分析代码库并在 `.agents/` 生成 AI 协作文档（AGENTS.md、CLAUDE.md、rules、skills），`.claude` 作为 `.agents` 的软链接。用于配置 AI 协作上下文、生成项目 AI 规则。
 ---
 
-# 项目解析与文档生成技能
+# AI 协作文档生成技能
 
-分析代码库并生成项目文档：
-- **AI 协作文档**：存放在 `.agents/` 目录（AGENTS.md、rules、skills）
-- **详尽项目文档**：`explaining-project.md` 放在项目根目录，供人类阅读
+分析代码库并生成**面向 AI 协作**的项目文档，存放在 `.agents/` 目录（AGENTS.md、rules、skills）。
+
+> 本技能的分析指南与探测脚本位于 `../explaining-project/references/`、`../explaining-project/scripts/`（跨技能共享，仅维护一份）。
 
 ## 输出结构
 
 ```
 [项目根目录]
-├── explaining-project.md       # 详尽项目文档（人类阅读）
 └── .agents/
     ├── AGENTS.md              # Agent 协作文档（主文件）
     ├── CLAUDE.md              # Claude Code 兼容入口（→ 内容直接写： @AGENTS.md ）
@@ -61,17 +60,16 @@ ln -sf .agents .claude
 
 **必须等待用户确认后再继续。**
 
-询问用户需要生成哪些文档（可多选）：
+询问用户需要生成哪些 `.agents/` 内容（可多选）：
 
 | 输出 | 用途 | 路径 |
 |------|------|------|
-| `explaining-project.md` | 详尽项目文档，新成员上手 | `[项目根目录]/explaining-project.md` |
 | `AGENTS.md` | Agent 协作核心文档 | `.agents/AGENTS.md` |
 | `CLAUDE.md` | claude code 协作核心文档 | `.agents/CLAUDE.md` |
 | `rules/` | AI Coding 规则补充 | `.agents/rules/*.md` |
 | `skills/` | 项目特定开发技能 | `.agents/skills/*/SKILL.md` |
 
-- 用户未指定时，询问是否默认生成全部（含 `explaining-project.md` + `.agents/` 全套）
+- 用户未指定时，询问是否默认生成全套（`.agents/` 全套）
 - 用户明确指定后，只生成指定内容
 - 若目标文档已存在，提示用户是「覆盖」还是「增量更新」
 
@@ -87,9 +85,9 @@ ln -sf .agents .claude
 | **JVM / Java** | `pom.xml`、`build.gradle` / `build.gradle.kts` |
 | **Python** | `pyproject.toml`、`requirements.txt`、`setup.py` |
 
-可选运行辅助脚本快速探测：
+可选运行辅助脚本快速探测（脚本与 `explaining-project` 共享）：
 ```bash
-python scripts/analyze_project.py <项目根目录>
+python ../explaining-project/scripts/analyze_project.py <项目根目录>
 ```
 脚本失败时，手工读取上表中的标记文件。
 
@@ -121,11 +119,11 @@ Read 应用入口附近配置（如 manage.py、.env.example）
 
 ### 4. 识别技术栈与结构
 
-**前端**：识别框架、状态管理、UI 库、构建工具、包管理器。详见 `references/frontend-analysis-guide.md`。
+**前端**：识别框架、状态管理、UI 库、构建工具、包管理器。详见 `../explaining-project/references/frontend-analysis-guide.md`。
 
-**后端 Java**：识别 Maven/Gradle、Spring Boot、模块结构。详见 `references/backend-analysis-guide.md` Java 部分。
+**后端 Java**：识别 Maven/Gradle、Spring Boot、模块结构。详见 `../explaining-project/references/backend-analysis-guide.md` Java 部分。
 
-**后端 Python**：识别 Django/FastAPI/Flask、依赖管理工具。详见 `references/backend-analysis-guide.md` Python 部分。
+**后端 Python**：识别 Django/FastAPI/Flask、依赖管理工具。详见 `../explaining-project/references/backend-analysis-guide.md` Python 部分。
 
 使用 Glob 查找关键目录和文件：
 
@@ -146,13 +144,15 @@ Glob: "**/settings.py" 或 "**/config*.py"
 Glob: "tests/**/*.py" 或 "**/test_*.py"
 ```
 
+> **注意**：分析指南末尾的「输出格式」一节指向**人读项目文档模板**。本技能不要用那个人读模板，而是用 `assets/agent-template.md`（AGENTS.md）与 `assets/rules-templates/*`（rules）填充。
+
 ---
 
 ### 5. 提取开发约定与通用资源
 
-**前端**：样式方案、组件命名、路由与状态管理组织。见 `references/frontend-analysis-guide.md`。
+**前端**：样式方案、组件命名、路由与状态管理组织。见 `../explaining-project/references/frontend-analysis-guide.md`。
 
-**后端**：分层/包约定、异常与校验、日志、API 风格。见 `references/backend-analysis-guide.md`。
+**后端**：分层/包约定、异常与校验、日志、API 风格。见 `../explaining-project/references/backend-analysis-guide.md`。
 
 提取通用资源（附简短示例）：
 - 前端：公共组件、自定义 Hooks、工具函数、常量、TypeScript 类型
@@ -162,16 +162,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 
 ### 6. 生成或更新文档
 
-#### 6.1 explaining-project.md
-
-- 使用模板：`assets/explaining-project-template.md`
-- 输出路径：`[项目根目录]/explaining-project.md`
-- **层级定位**：最详尽的项目文档，覆盖项目概述、技术栈、结构、开发约定、测试、部署、常见问题等
-- **已有文档时**：先读取，保留历史沉淀的「已知坑」「特定配置说明」，用分析结果覆盖/更新变化部分
-- **无文档时**：按模板填充，删除不适用章节（标注「仅前端 / 仅后端」的按仓库类型取舍）
-- `AGENTS.md` 可引用此文档：「详见 `explaining-project.md`」
-
-#### 6.2 AGENTS.md & CLAUDE.md
+#### 6.1 AGENTS.md & CLAUDE.md
 
 **AGENTS.md**：
 - 使用模板：`assets/agent-template.md`
@@ -183,9 +174,9 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 **CLAUDE.md**：
 - 输出路径：`.agents/CLAUDE.md`
 - **定位**：Claude Code 兼容入口，内容与 AGENTS.md 一致
-- **实现**：`.agents/CLAUDE.md` → @ 引用 `.agents/AGENTS.md` 
+- **实现**：`.agents/CLAUDE.md` → @ 引用 `.agents/AGENTS.md`
 
-#### 6.3 Rules（`.agents/rules/`）
+#### 6.2 Rules（`.agents/rules/`）
 
 根据项目分析结果生成以下规则文件（使用 `assets/rules-templates/` 模板）：
 
@@ -196,9 +187,9 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 | `architecture-rules.md` | 分层约定、模块边界、依赖方向、数据流 | 项目有特定架构模式时 |
 | `testing-rules.md` | 测试策略、Mock 规范、覆盖率要求 | 项目有测试体系时，没有测试体系，则不生成 |
 
-**Rules 编写原则**：只写该项目**特有**的约定和本skill 内置的，不写通用常识（项目自己添加）。
+**Rules 编写原则**：只写该项目**特有**的约定和本 skill 内置的，不写通用常识（项目自己添加）。
 
-#### 6.4 Skills（`.agents/skills/`）
+#### 6.3 Skills（`.agents/skills/`）
 
 根据项目特点生成项目特定 skill：
 
@@ -232,13 +223,6 @@ New-Item -ItemType SymbolicLink -Path .claude -Target .agents
 ---
 
 ## 输出要求
-
-### explaining-project.md
-
-最详尽的项目文档，按仓库实际类型组织章节：
-- **共性**：项目概述、快速开始、项目结构、开发约定、测试、部署、常见问题、参考资源
-- **前端为主时侧重**：技术栈（Node/框架/UI）、页面与路由、样式与交互约定、组件与 Hooks、状态管理、前端侧 API 调用约定
-- **后端 Java/Python 为主时侧重**：运行时与构建、模块与分层、配置与多环境、对外 API、数据访问与集成、后端测试与打包运行
 
 ### AGENTS.md
 
@@ -283,13 +267,12 @@ New-Item -ItemType SymbolicLink -Path .claude -Target .agents
 
 ## 参考资源
 
-- `references/frontend-analysis-guide.md` — 前端（Node）项目分析指南
-- `references/backend-analysis-guide.md` — Java / Python 后端分析指南
-- `assets/explaining-project-template.md` — 详尽项目文档模板
+- `../explaining-project/references/frontend-analysis-guide.md` — 前端（Node）项目分析指南（共享）
+- `../explaining-project/references/backend-analysis-guide.md` — Java / Python 后端分析指南（共享）
+- `../explaining-project/scripts/analyze_project.py` — 多生态项目信息探测辅助脚本（共享）
 - `assets/agent-template.md` — Agent 协作文档模板
 - `assets/rules-templates/common-rules.md` — 通用 AI Coding 行为规则模板
 - `assets/rules-templates/coding-style.md` — 代码风格规则模板
 - `assets/rules-templates/architecture-rules.md` — 架构规则模板
 - `assets/rules-templates/testing-rules.md` — 测试规则模板
 - `assets/skill-template.md` — 项目特定 skill 模板
-- `scripts/analyze_project.py` — 多生态项目信息探测辅助脚本
