@@ -1,17 +1,17 @@
 ---
-name: explaining-project
-description: 分析代码库（前端 Node/React/Vue 或后端 Java/Python）并生成详尽的人读项目文档 `explaining-project.md`，放在项目根目录。用于新成员上手、项目文档化。
+name: explain-project
+description: 分析代码库（前端 Node/React/Vue 或后端 Java/Python）并生成详尽的人读项目文档 `explain-project.md`，放在项目根目录。用于新成员上手、项目文档化。
 ---
 
 # 项目解析与文档生成技能（人读文档）
 
-分析代码库并生成**面向人类阅读**的详尽项目文档 `explaining-project.md`，输出到项目根目录。
+分析代码库并生成**面向人类阅读**的详尽项目文档 `explain-project.md`，输出到项目根目录。
 
 ## 输出结构
 
 ```
 [项目根目录]
-└── explaining-project.md       # 详尽项目文档（人类阅读）
+└── explain-project.md       # 详尽项目文档（人类阅读）
 ```
 
 ## 工作流程
@@ -20,7 +20,7 @@ description: 分析代码库（前端 Node/React/Vue 或后端 Java/Python）并
 
 **必须等待用户确认后再继续。**
 
-- 默认生成 `[项目根目录]/explaining-project.md`
+- 默认生成 `[项目根目录]/explain-project.md`
 - 若该文档已存在，提示用户选择「覆盖」还是「增量更新」
   - **增量更新**：先读取已有文档，保留历史沉淀的「已知坑」「特定配置说明」等，只用分析结果覆盖/更新变化部分
   - **覆盖**：按模板重新填充
@@ -110,10 +110,10 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 
 ---
 
-### 6. 生成或更新 `explaining-project.md`
+### 6. 生成或更新 `explain-project.md`
 
-- 使用模板：`assets/explaining-pm-template.md`
-- 输出路径：`[项目根目录]/explaining-project.md`
+- 使用模板：`assets/explain-pm-template.md`
+- 输出路径：`[项目根目录]/explain-project.md`
 - **层级定位**：最详尽的项目文档，覆盖项目概述、技术栈、结构、开发约定、测试、部署、常见问题等
 - **已有文档时**：先读取，保留历史沉淀的「已知坑」「特定配置说明」，用分析结果覆盖/更新变化部分
 - **无文档时**：按模板填充，删除不适用章节（标注「仅前端 / 仅后端」的按仓库类型取舍）
@@ -122,7 +122,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 
 ## 输出要求
 
-### explaining-project.md
+### explain-project.md
 
 最详尽的项目文档，按仓库实际类型组织章节：
 - **共性**：项目概述、快速开始、项目结构、开发约定、测试、部署、常见问题、参考资源
@@ -134,7 +134,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 ## Gotchas
 
 1. **全栈项目易遗漏**：同时有 `package.json` 和 `pom.xml`/`build.gradle` 时，模型容易只分析前端。必须分别扫描两套入口，文档中分「前端 / 后端」两节。
-2. **更新时覆盖历史信息**：已有 `explaining-project.md` 中的「已知坑」「特定配置说明」等历史沉淀，更新前必须先读取并保留，只覆盖分析结果会变化的部分。
+2. **更新时覆盖历史信息**：已有 `explain-project.md` 中的「已知坑」「特定配置说明」等历史沉淀，更新前必须先读取并保留，只覆盖分析结果会变化的部分。
 3. **脚本失败不阻塞**：`analyze_project.py` 失败时，改为手工读取配置文件，不要因此中断产出。
 
 ---
@@ -143,5 +143,5 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 
 - `references/frontend-analysis-guide.md` — 前端（Node）项目分析指南
 - `references/backend-analysis-guide.md` — Java / Python 后端分析指南
-- `assets/explaining-pm-template.md` — 详尽项目文档模板
+- `assets/explain-pm-template.md` — 详尽项目文档模板
 - `scripts/analyze_project.py` — 多生态项目信息探测辅助脚本（与 `agents-docs` 共享）

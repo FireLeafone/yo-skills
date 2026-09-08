@@ -137,7 +137,7 @@ src/
 
 ## 输出格式
 
-使用提供的模板 `assets/explaining-pm-template.md` 作为输出格式，填充分析得到的信息。
+使用提供的模板 `assets/explain-pm-template.md` 作为输出格式，填充分析得到的信息。
 
 ## 注意事项
 
