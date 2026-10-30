@@ -7,12 +7,12 @@ description: 分析代码库（前端 Node/React/Vue 或后端 Java/Python），
 
 分析代码库并生成**面向人类阅读**的详尽项目文档，输出到项目根目录。分两个维度：
 
-- **技术维度** `explain-project.md`：讲「项目怎么开发的」——技术栈、结构、约定、资源、部署。
-- **业务维度** `explain-business-*.md`：讲「项目做什么、为什么」——业务总结、功能模块、接口场景、权限、数据模型、上下游、日志、流程图、核心交互。
+- **技术维度** `explain-project.md`：讲「项目怎么快速参与开发」——技术栈、结构、约定、资源、部署。
+- **业务维度** `explain-business-*.md`：讲「项目做什么、如何做、为什么」——业务总结、功能模块、接口场景、权限、数据模型、上下游、日志、流程图、核心交互。
 
 ## 输出结构
 
-```
+```text
 [项目根目录]
 ├── explain-project.md               # 技术维度文档（整仓一份，前后端分节）
 ├── explain-business-frontend.md     # 业务维度·前端（仅前端工程时产出）
@@ -20,6 +20,7 @@ description: 分析代码库（前端 Node/React/Vue 或后端 Java/Python），
 ```
 
 产出规则：
+
 - 仅有前端工程 → 只产出 `explain-business-frontend.md`
 - 仅有后端工程 → 只产出 `explain-business-backend.md`
 - 全栈（前后端共存）→ 两份业务文档都产出；共享业务上下文（业务总结/角色/术语）以后端业务文档为主，前端文档引用之
@@ -54,9 +55,11 @@ description: 分析代码库（前端 Node/React/Vue 或后端 Java/Python），
 | **Python** | `pyproject.toml`、`requirements.txt`、`setup.py` |
 
 可选运行辅助脚本快速探测：
+
 ```bash
 python scripts/analyze_project.py <项目根目录>
 ```
+
 脚本失败时，手工读取上表中的标记文件。
 
 ---
@@ -64,6 +67,7 @@ python scripts/analyze_project.py <项目根目录>
 ### 3. 读取配置文件
 
 **前端**：
+
 ```bash
 Read package.json
 Read tsconfig.json / jsconfig.json（若存在）
@@ -71,12 +75,14 @@ Read vite.config.* / webpack.config.* / next.config.*（若存在）
 ```
 
 **Java**：
+
 ```bash
 Read pom.xml 或 build.gradle / build.gradle.kts
 Read src/main/resources/application*.yml 或 application*.properties（若存在）
 ```
 
 **Python**：
+
 ```bash
 Read pyproject.toml 或 setup.cfg / setup.py（若存在）
 Read requirements.txt 或 requirements-*.txt 或 Pipfile（若存在）
@@ -121,6 +127,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 **后端**：分层/包约定、异常与校验、日志、API 风格。见 `references/backend-analysis-guide.md`。
 
 提取通用资源（附简短示例）：
+
 - 前端：公共组件、自定义 Hooks、工具函数、常量、TypeScript 类型
 - 后端：可复用模块、配置封装、中间件/过滤器、数据访问层
 
@@ -156,6 +163,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 ### explain-project.md（技术维度）
 
 最详尽的技术文档，按仓库实际类型组织章节：
+
 - **共性**：项目概述、快速开始、项目结构、开发约定、测试、部署、常见问题、参考资源
 - **前端为主时侧重**：技术栈（Node/框架/UI）、页面与路由、样式与交互约定、组件与 Hooks、状态管理、前端侧 API 调用约定
 - **后端 Java/Python 为主时侧重**：运行时与构建、模块与分层、配置与多环境、对外 API、数据访问与集成、后端测试与打包运行
@@ -163,6 +171,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 ### explain-business-*.md（业务维度）
 
 按端产出，讲业务语义而非代码构建：
+
 - **共性**：业务总结、业务角色与参与者、主要功能模块、接口及使用场景、权限设计及控制、业务流程图、关键状态机、业务规则与约束、业务核心交互明细、业务术语表
 - **前端侧重**：页面/功能域、调用的后端接口及场景、路由与前端权限控制、前端可见状态机、核心交互
 - **后端侧重**：对外接口设计及场景、鉴权与权限模型、数据库设计(ER图)、上下游关联服务、日志设计及控制、领域事件/通知、业务状态机、核心链路
