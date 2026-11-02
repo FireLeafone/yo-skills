@@ -6,14 +6,23 @@
 - 创建日期：<创建日期>
 
 ## 工作原则
-1. 优先读取 `rules.md` 了解写作规范，再读取 `presets/outline.md`、`presets/characters.md`、`presets/world.md` 等设定文件，了解小说设定。
-2. 写作前查看 `progress.md` 了解当前进度；可查阅 `references.md` 获取参考资料与灵感。
-3. 新章节正文写入 `chapters/xxx_[章节名].md`，文件名保持顺序数字序号 + 章节名。
-4. 如果有设定调整，修改设定前先在 `presets/` 对应文件中更新，再同步到正文。
-5. 完成章节后更新 `progress.md` 的小说进度（章节、人物、大纲完成度等），并填写 `checked.md` 的章节检查清单。
+1. 优先读取 `presets/outline.md`、`presets/characters.md`、`presets/world.md` 等设定文件，了解小说设定。
+2. 写作前查看 `progress.md` 了解当前进度、查看最新一章内容和最新章节的设计规划，续写接下来的新章节。
+3. 新章节正文写入 `chapters/volume-NN/NNN_[章节名].md`，文件名保持顺序数字序号 + 章节名；分卷与章节规划见 `chapters/index.md` 及各卷 `index.md`。
+4. 内容写之前，读取 `rules.md` 了解写作规范，再开始写。
+5. 如果有设定调整，修改设定前先在 `presets/` 对应文件中更新，再同步到正文。
+6. 根据 `checked.md` 进行章节检查。
+7. 完成章节后更新 `progress.md` 的小说进度（章节、人物、大纲完成度等）。
+8. 新增和回收的伏笔更新记录到 `presets/foreshadowing.md`（伏笔唯一数据源）。
 
 ## 输出要求
 - 使用 Markdown 格式。
 - 章节内可适当分段，保持中文网络小说常见排版。
 - 人物称呼、地名、功法/技能名须与 `presets/` 文件保持一致。
-- 遵循 `rules.md` 中的写作规范与禁忌事项。
+- 遵循 `rules.md` 中的写作规范。
+- 遵守 `checked.md` 要求事项。
+
+## 参考资料
+
+- 资料查询，可查阅 `references.md` 获取参考资料与灵感。
+- 检查章节字数与对话密度，使用 `presets/check_dialogue_density.py`。

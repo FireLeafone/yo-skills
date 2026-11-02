@@ -35,6 +35,7 @@ novel-create 承担两项职责：**初始化一个标准、可维护的小说�
 | 世界观设定 | `presets/world.md` | `assets/presets/world.md.template` |
 | 核心主题 | `presets/themes.md` | `assets/presets/themes.md.template` |
 | 其他设定 | `presets/settings.md` | `assets/presets/settings.md.template` |
+| 伏笔设计 | `presets/foreshadowing.md` | `assets/presets/foreshadowing.md.template` |
 
 类型化设计指导参考 `references/novel-type.md`。
 
@@ -49,17 +50,20 @@ novel-create 承担两项职责：**初始化一个标准、可维护的小说�
 ├── progress.md
 ├── checked.md
 ├── references.md
-├── README.md
 ├── count_words.py
 ├── presets/
 │   ├── outline.md
 │   ├── characters.md
 │   ├── world.md
 │   ├── themes.md
-│   └── settings.md
+│   ├── settings.md
+│   ├── foreshadowing.md
+│   └── check_dialogue_density.py
 └── chapters/
     └── .gitkeep
 ```
+
+`chapters/volume-NN/index.md` 分卷细纲与 `chapters/index.md` 全书总览由 `novel-chapters` 技能生成，路径A 阶段只创建空的 `chapters/` 目录。
 
 ## Workflow
 
@@ -138,15 +142,16 @@ novel-create 承担两项职责：**初始化一个标准、可维护的小说�
 
 - `assets/AGENTS.md.template` → 项目 `AGENTS.md`
 - `assets/rules.md.template` → 项目 `rules.md`
-- `assets/README.md.template` → 项目 `README.md`
 - `assets/progress.md.template` → 项目 `progress.md`
 - `assets/checked.md.template` → 项目 `checked.md`
 - `assets/references.md.template` → 项目 `references.md`
-- `assets/presets/outline.md.template` → 项目 `presets/outline.md`（结构化富模板：三幕大纲、角色、世界观、分卷、伏笔）
+- `assets/presets/outline.md.template` → 项目 `presets/outline.md`（结构化富模板：三幕大纲、角色、世界观、分卷、伏笔设计期总览）
 - `assets/presets/characters.md.template` → 项目 `presets/characters.md`（结构化富模板：心理维度、关系网、角色弧线）
 - `assets/presets/world.md.template` → 项目 `presets/world.md`（结构化富模板：地理/社会/文化/体系/历史/势力）
 - `assets/presets/themes.md.template` → 项目 `presets/themes.md`（核心主题、情感基调、冲突、价值观）
 - `assets/presets/settings.md.template` → 项目 `presets/settings.md`（命名术语、关键道具、待解决问题）
+- `assets/presets/foreshadowing.md.template` → 项目 `presets/foreshadowing.md`（伏笔唯一数据源：登记规则、状态图例、伏笔总表）
+- `assets/presets/check_dialogue_density.py` → 项目 `presets/check_dialogue_density.py`（章节字数与对话密度检查脚本）
 - `assets/count_words.py` → 项目 `count_words.py`
 
 ## Output Format
@@ -162,8 +167,8 @@ novel-create 承担两项职责：**初始化一个标准、可维护的小说�
 - `checked.md` — 章节检查清单
 - `references.md` — 参考资料、灵感、优秀小说作品等
 - `count_words.py` — 字数统计脚本
-- `presets/` — 大纲、人物、世界观、主题、其他设定等
-- `chapters/` — 章节正文目录
+- `presets/` — 大纲、人物、世界观、主题、其他设定、伏笔清单与对话密度检查脚本
+- `chapters/` — 章节正文目录（分卷细纲由 novel-chapters 生成）
 
 下一步建议：进入设计规划填充 `presets/outline.md`。
 ```
@@ -181,8 +186,9 @@ novel-create 承担两项职责：**初始化一个标准、可维护的小说�
 - 在创建/落盘前没有展示清单并等待用户确认 → 必须先确认再落盘。
 - 目标目录或 `presets/` 下已有同名文件却不提示用户 → 必须询问覆盖、合并还是中止/跳过。
 - 把正文直接写进 `presets/` 下 → 正文应放入 `chapters/`。
-- 遗漏 `count_words.py`、`AGENTS.md`、`rules.md`、`checked.md` 或 `references.md` → 按 Asset Files 完整复制。
-- 没有从 `assets/` 复制模板，而是自行发挥重写 AGENTS.md / README.md / progress.md 等 → 这会破坏跨项目一致性，必须严格按模板输出；路径A 只替换三个占位符，不润色其他文字。
+- 遗漏 `count_words.py`、`AGENTS.md`、`rules.md`、`checked.md`、`references.md`、`presets/foreshadowing.md` 和 `presets/check_dialogue_density.py` → 按 Asset Files 完整复制。
+- 没有从 `assets/` 复制模板，而是自行发挥重写 AGENTS.md / progress.md 等 → 这会破坏跨项目一致性，必须严格按模板输出；路径A 只替换三个占位符，不润色其他文字。
+- 把伏笔登记进 `presets/settings.md` 或 `progress.md` → 伏笔唯一数据源是 `presets/foreshadowing.md`，其他文件只保留设计期总览。
 - 在路径A 阶段往模板里塞大量小说设定或剧情内容 → 初始化阶段只填充模板占位符，具体设定由路径B 或用户后续填写。
 - 路径B 信息不足时直接落盘 5 个完整文档 → 用户只给一句话灵感时，先进入头脑风暴，而不是直接落盘。
 - 修改人物设定后不回头检查大纲和世界规则 → 保持跨文档一致。
