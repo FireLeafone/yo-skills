@@ -5,7 +5,7 @@ description: >
   只要用户想产出小说章节正文，就应该优先使用本 skill：包括"写第 X 章"、"帮我写一章"、"续写小说"、
   "开始写正文"、"继续写"、"novel chapter"、"write chapter"、"continue novel"、"next chapter" 等。
   适用于已有小说项目、需要基于 presets/ 中的设定文档产出 chapters/ 下正文的场景；
-  不适用于从零创建项目（使用 novel-create）或只做前期设计规划（使用 novel-design）。
+  不适用于从零创建项目（使用 novel-create）或只做前期设计规划（使用 novel-create 的设计规划路径）。
 ---
 
 # novel-write
@@ -21,7 +21,7 @@ description: >
 以下情况不用:
 
 - 用户还没有小说项目，想从零开始搭建结构（使用 `novel-create`）
-- 用户只想做前期设计、大纲、人物设定，不需要落盘正文（使用 `novel-design`）
+- 用户只想做前期设计、大纲、人物设定，不需要落盘正文（使用 `novel-create` 的设计规划路径）
 - 用户只是闲聊点子、询问写作技巧，没有明确要写某一章
 
 ## 输出位置

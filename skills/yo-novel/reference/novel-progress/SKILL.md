@@ -20,7 +20,7 @@ When NOT to use:
 
 - 用户想从零开始创建小说项目（使用 `novel-create`）
 - 用户想写新章节正文（使用 `novel-write`）
-- 用户想设计大纲/人物/世界观（使用 `novel-design`）
+- 用户想设计大纲/人物/世界观（使用 `novel-create`）
 - 用户只是泛泛地问写作技巧、剧情建议，而不涉及进度文件更新
 
 ## Workflow

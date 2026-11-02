@@ -9,7 +9,7 @@
 - `progress.md` — 写作进度追踪
 - `checked.md` — 章节结束后的检查清单
 - `references.md` — 参考资料与灵感
-- `presets/` — 大纲、人物、世界观、其他设定
+- `presets/` — 大纲、人物、世界观、主题、其他设定
 - `chapters/` — 小说正文
 - `count_words.py` — 字数统计脚本
 
