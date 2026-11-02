@@ -21,9 +21,11 @@ def read_markdown_files(directory: Path) -> dict[str, int]:
     counts = {}
     if not directory.exists():
         return counts
-    for path in sorted(directory.glob("*.md")):
+    for path in sorted(directory.rglob("*.md")):
+        if path.name == "index.md":
+            continue
         text = path.read_text(encoding="utf-8")
-        counts[path.name] = count_chinese_and_words(text)
+        counts[str(path)] = count_chinese_and_words(text)
     return counts
 
 

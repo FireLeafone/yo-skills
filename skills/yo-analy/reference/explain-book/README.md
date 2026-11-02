@@ -13,7 +13,7 @@
 
 ## 生成的解析文档集长什么样
 
-```
+```text
 <slug>/
 ├── README.md             # 核心速览 + 全部索引（正文 < 4,000 tokens）
 ├── chapters/             # 逐章解析，按需加载
@@ -32,7 +32,7 @@
 
 ## 使用
 
-```
+```bash
 /explain-book ./某本书.pdf
 /explain-book ./小说卷一.pdf fanren-v1
 /explain-book ./notes/ --只解析        # 先出解析报告，不生成文件
@@ -44,7 +44,7 @@
 
 ## 仓库结构
 
-```
+```text
 explain-book/
 ├── SKILL.md              # skill 定义 + 分步解析规范（生成器规格）
 ├── references/           # 章节模板、支撑文件规格、主 README 模板、更新/合并流程（按需加载）

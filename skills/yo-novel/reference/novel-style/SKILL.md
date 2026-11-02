@@ -9,7 +9,7 @@ description: >
   只要用户提到"提取/分析/总结 XX 小说的写作风格"、"仿写 XX 风格"、"生成 XX 风格指南"、
   "XX 风格 skill"、"做一份 XX 的风格档案"、"style extraction"、"novel style guide"、
   "learn writing style from" 或类似意图，就应该调用本 skill。
-  不适用于从零设计一本全新小说的风格（那是 novel-design 的事），也不适用于直接写正文（那是 novel-write 的事）。
+  不适用于从零设计一本全新小说的风格（那是 novel-create 的事），也不适用于直接写正文（那是 novel-write 的事）。
 ---
 
 # novel-style
@@ -39,7 +39,7 @@ description: >
 ## 输出位置
 
 - 默认输出到项目根目录下的 `presets/styles/【书名】-style-skill.md`。文件名中的 `【书名】` 用书名本身替换（保留全角方括号 `【】`，例如 `【三体】-style-skill.md`）。如果用户偏好不带括号或改用《》，按用户要求执行。
-- 如果 `presets/styles/` 不存在，创建它。这条路径与 `novel-design` 的 `presets/` 约定保持一致，便于集中管理。
+- 如果 `presets/styles/` 不存在，创建它。这条路径与 `novel-create` 的 `presets/` 约定保持一致，便于集中管理。
 - 如果目标文件已存在，**必须先询问用户是覆盖、合并还是跳过**，禁止直接覆盖——风格文档往往是反复迭代的产物。
 - 产出后，告诉用户：若希望在 `novel-write` 中直接引用，可把该文件复制/软链到 `novel-write/references/`，或直接在写作时指定 `presets/styles/【书名】-style-skill.md` 作为风格参考；`novel-write` 优先使用用户指定的风格。
 
@@ -156,7 +156,7 @@ description: >
 
 ## 何时不要用本 skill
 
-- 用户想从零设计一本**全新**小说的风格——那是 `novel-design` 的职责。
+- 用户想从零设计一本**全新**小说的风格——那是 `novel-create` 的职责。
 - 用户想直接**写正文**——把已提取的风格档案交给 `novel-write`。
 - 用户只想随便聊聊一本书好不好看、不打算落盘成可复用文档——直接聊即可，不必调用本 skill。
 - 用户提供的"小说"其实是没有定型的零散点子，无原作可提取——本 skill 依赖一本**已存在**的原著作为分析对象。

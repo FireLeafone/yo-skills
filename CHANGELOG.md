@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- refactor: merge novel-design into novel-create
+
 ## 1.7.0 (2026-09-08)
 
 - feat: explain-project support business
