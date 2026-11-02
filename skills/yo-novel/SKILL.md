@@ -18,6 +18,7 @@ Yo-Novel 是多个小说编写辅助技能的集合入口。根据你的需求�
 | 子技能 | 路径 | 用途 | 典型触发语 |
 |--------|------|------|-----------|
 | novel-create | `reference/novel-create/SKILL.md` | 初始化小说项目骨架，并支持动笔前的设计规划（大纲、世界观、人物、主题） | "我想写本小说"、"新建小说项目"、"设计小说"、"写大纲"、"世界观设定"、"人物设定"、"novel design" |
+| novel-character | `reference/novel-character/SKILL.md` | 主角与群像设计：主角性格标签、配角功能模型、反派魅力塑造、人物关系网络、人物弧光规划 | "设计主角"、"主角性格"、"塑造配角"、"反派塑造"、"人物弧光"、"群像设计"、"角色扁平" |
 | novel-write | `reference/novel-write/SKILL.md` | 基于大纲与设定撰写或续写小说章节正文 | "写第 X 章"、"续写小说"、"开始写正文"、"novel chapter"、"write chapter" |
 | novel-chapters | `reference/novel-chapters/SKILL.md` | 按卷规划小说章节：主题、说明、人物、阶段章节划分与伏笔清单 | "分卷"、"章节规划"、"卷规划"、"划分章节"、"按卷写大纲" |
 | novel-progress | `reference/novel-progress/SKILL.md` | 更新 `progress.md` 进度追踪表（章节、人物、时间线、伏笔） | "更新进度"、"progress.md"、"写完第 X 章"、"标记大纲完成"、"新增伏笔" |
@@ -33,6 +34,7 @@ Yo-Novel 是多个小说编写辅助技能的集合入口。根据你的需求�
 例如：
 
 - `/yo-novel novel-create` → 使用 `reference/novel-create/SKILL.md`
+- `/yo-novel novel-character` → 使用 `reference/novel-character/SKILL.md`
 - `/yo-novel novel-write` → 使用 `reference/novel-write/SKILL.md`
 - `/yo-novel novel-chapters` → 使用 `reference/novel-chapters/SKILL.md`
 - `/yo-novel novel-progress` → 使用 `reference/novel-progress/SKILL.md`
@@ -45,6 +47,8 @@ Yo-Novel 是多个小说编写辅助技能的集合入口。根据你的需求�
 
 - **创建 / 初始化 / 设计 / 规划 / 大纲 / 设定** → `novel-create`
   - 关键词示例："创建小说"、"新建小说项目"、"初始化小说"、"小说项目结构"、"开始写小说"、"novel project"、"setup novel"；以及"设计小说"、"小说设定"、"写大纲"、"世界观"、"人物设定"、"角色设定"、"核心主题"、"故事大纲"、"novel design"、"novel outline"、"world building"
+- **设计主角 / 塑造配角 / 反派 / 人物关系 / 人物弧光 / 群像** → `novel-character`
+  - 关键词示例："设计主角"、"主角性格"、"塑造配角"、"配角功能"、"反派塑造"、"反派魅力"、"人物关系"、"人物关系网络"、"人物弧光"、"群像设计"、"角色扁平"、"角色没辨识度"、"character design"
 - **写正文 / 写章节 / 续写** → `novel-write`
   - 关键词示例："写第 X 章"、"写一章"、"续写小说"、"开始写正文"、"novel chapter"、"write chapter"、"continue novel"、"next chapter"
 - **分卷 / 章节规划 / 卷规划 / 按卷划分章节** → `novel-chapters`
