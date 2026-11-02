@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.0 (2026-11-02)
+
+- feat: ai update novel-create
+- chore: update md lint
+- feat: update, add novel-character
+- feat: novel-design merge to novel-create
+- feat: update lint
+
 ## Unreleased
 
 - refactor: merge novel-design into novel-create
