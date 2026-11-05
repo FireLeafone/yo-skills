@@ -5,12 +5,20 @@ description: 识别当前界面的真正性能瓶颈，修复它，然后测量�
 
 性能是一项功能。识别当前界面的真正性能瓶颈，修复它，然后测量。不要优化不慢的东西。
 
+## 执行契约
+
+1. 确认目标页面、性能症状和修改范围；先读取项目脚本及现有监控/测试能力。
+2. 在相同环境和路线下记录基线。无法测量时只给假设和测量方案，不直接进行投机优化。
+3. 只修改有证据支持的主要瓶颈，使用项目已有依赖，不为优化擅自引入库或 CDN。
+4. 修改后重复相同测量，并运行功能回归检查；没有前后数据时不得声称性能提升。
+5. 报告基线、结果、测量环境和未覆盖设备，不自动发布。
+
 ## 评估性能问题
 
 理解当前性能并识别问题：
 
 1. **测量当前状态**：
-   - **Core Web Vitals**：LCP、FID/INP、CLS 分数
+   - **Core Web Vitals**：LCP、INP、CLS 分数
    - **加载时间**：可交互时间、首次内容绘制
    - **包大小**：JavaScript、CSS、图片大小
    - **运行时性能**：帧率、内存使用、CPU 使用
@@ -39,16 +47,19 @@ description: 识别当前界面的真正性能瓶颈，修复它，然后测量�
 - 使用 CDN 加速交付
 
 ```html
-<img 
+<img
   src="hero.webp"
   srcset="hero-400.webp 400w, hero-800.webp 800w, hero-1200.webp 1200w"
   sizes="(max-width: 400px) 400px, (max-width: 800px) 800px, 1200px"
-  loading="lazy"
+  fetchpriority="high"
   alt="Hero image"
 />
+
+首屏 LCP 图片不要使用 `loading="lazy"`；延迟加载只用于首屏以下图片。
 ```
 
 **减少 JavaScript 包**：
+
 - 代码分割（基于路由、基于组件）
 - Tree shaking（移除未使用代码）
 - 移除未使用的依赖
@@ -61,12 +72,14 @@ const HeavyChart = lazy(() => import('./HeavyChart'));
 ```
 
 **优化 CSS**：
+
 - 移除未使用的 CSS
 - 关键 CSS 内联，其余异步加载
 - 最小化 CSS 文件
 - 对独立区域使用 CSS containment
 
 **优化字体**：
+
 - 使用 `font-display: swap` 或 `optional`
 - 字体子集（只加载需要的字符）
 - 预加载关键字体
@@ -83,6 +96,7 @@ const HeavyChart = lazy(() => import('./HeavyChart'));
 ```
 
 **优化加载策略**：
+
 - 关键资源优先（async/defer 非关键资源）
 - 预加载关键资源
 - 预取可能的下一页
@@ -92,6 +106,7 @@ const HeavyChart = lazy(() => import('./HeavyChart'));
 ### 渲染性能
 
 **避免布局抖动**：
+
 ```javascript
 // ❌ 不好：交替读取和写入（导致重排）
 elements.forEach(el => {
@@ -107,6 +122,7 @@ elements.forEach((el, i) => {
 ```
 
 **优化渲染**：
+
 - 对独立区域使用 CSS `contain` 属性
 - 最小化 DOM 深度（更扁平更快）
 - 减少 DOM 大小（更少的元素）
@@ -114,6 +130,7 @@ elements.forEach((el, i) => {
 - 超长列表使用虚拟滚动（react-window、react-virtualized）
 
 **减少绘制与合成**：
+
 - 使用 `transform` 和 `opacity` 实现可靠的移动，但当它们创造有意义的润色时允许 blur、filters、masks、clip paths、shadows 和 color shifts
 - 避免随意动画化布局驱动属性（`width`、`height`、`top`、`left`、margins）
 - 对已知昂贵操作少量使用 `will-change`
@@ -122,6 +139,7 @@ elements.forEach((el, i) => {
 ### 动画性能
 
 **GPU 加速**：
+
 ```css
 /* ✅ GPU 加速（快） */
 .animated {
@@ -137,6 +155,7 @@ elements.forEach((el, i) => {
 ```
 
 **流畅 60fps**：
+
 - 每帧目标 16ms（60fps）
 - JS 动画使用 `requestAnimationFrame`
 - 滚动处理防抖/节流
@@ -144,6 +163,7 @@ elements.forEach((el, i) => {
 - 动画期间避免长耗时 JavaScript
 
 **Intersection Observer**：
+
 ```javascript
 // 高效检测元素何时进入视口
 const observer = new IntersectionObserver((entries) => {
@@ -158,6 +178,7 @@ const observer = new IntersectionObserver((entries) => {
 ### React/框架优化
 
 **React 特定**：
+
 - 对昂贵组件使用 `memo()`
 - 对昂贵计算使用 `useMemo()` 和 `useCallback()`
 - 长列表虚拟化
@@ -166,6 +187,7 @@ const observer = new IntersectionObserver((entries) => {
 - 使用 React DevTools Profiler
 
 **框架无关**：
+
 - 最小化重新渲染
 - 昂贵操作防抖
 - 计算值记忆化
@@ -174,12 +196,14 @@ const observer = new IntersectionObserver((entries) => {
 ### 网络优化
 
 **减少请求**：
+
 - 合并小文件
 - 图标使用 SVG sprite
 - 内联小型关键资源
 - 移除未使用的第三方脚本
 
 **优化 API**：
+
 - 使用分页（不要加载所有内容）
 - GraphQL 只请求需要的字段
 - 响应压缩（gzip、brotli）
@@ -187,6 +211,7 @@ const observer = new IntersectionObserver((entries) => {
 - 静态资源 CDN
 
 **慢速连接优化**：
+
 - 基于连接的自适应加载（navigator.connection）
 - 乐观 UI 更新
 - 请求优先级
@@ -195,19 +220,24 @@ const observer = new IntersectionObserver((entries) => {
 ## Core Web Vitals 优化
 
 ### Largest Contentful Paint (LCP < 2.5s)
+
 - 优化首屏图片
 - 内联关键 CSS
 - 预加载关键资源
 - 使用 CDN
 - 服务端渲染
 
-### First Input Delay (FID < 100ms) / INP (< 200ms)
+### Interaction to Next Paint（INP，良好阈值 ≤200ms）
+
+FID 已不再是当前 Core Web Vitals 指标；历史报告可保留 FID 对照，但本次优化以 INP 为主。
+
 - 拆分长任务
 - 延迟非关键 JavaScript
 - 重型计算使用 Web workers
 - 减少 JavaScript 执行时间
 
 ### Cumulative Layout Shift (CLS < 0.1)
+
 - 为图片和视频设置尺寸
 - 不要在现有内容上方注入内容
 - 使用 `aspect-ratio` CSS 属性
@@ -224,6 +254,7 @@ const observer = new IntersectionObserver((entries) => {
 ## 性能监控
 
 **使用工具**：
+
 - Chrome DevTools（Lighthouse、Performance 面板）
 - WebPageTest
 - Core Web Vitals（Chrome UX Report）
@@ -231,7 +262,8 @@ const observer = new IntersectionObserver((entries) => {
 - 性能监控（Sentry、DataDog、New Relic）
 
 **关键指标**：
-- LCP、FID/INP、CLS（Core Web Vitals）
+
+- LCP、INP、CLS（Core Web Vitals）
 - 可交互时间（TTI）
 - 首次内容绘制（FCP）
 - 总阻塞时间（TBT）
@@ -241,6 +273,7 @@ const observer = new IntersectionObserver((entries) => {
 **重要**：在真实设备和真实网络条件下测量。带快速连接的桌面 Chrome 不具代表性。
 
 **绝不**：
+
 - 没有测量就优化（过早优化）
 - 为性能牺牲无障碍
 - 优化时破坏功能
@@ -260,4 +293,4 @@ const observer = new IntersectionObserver((entries) => {
 - **无回归**：确保功能仍然工作
 - **用户感知**：它*感觉*更快了吗？
 
-当面向用户的数字改善时，交给 `/yo-ui polish` 做最终润色。
+只有相同条件下的前后指标支持时才能报告改善；同时列出未实测设备和环境。用户还需要最终细节检查时，可建议 `/yo-ui polish`，不自动执行。

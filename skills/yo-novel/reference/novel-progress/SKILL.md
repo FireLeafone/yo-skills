@@ -40,35 +40,30 @@ When NOT to use:
    - **辅助扫描 `chapters/`**：当用户没有明确给出某章信息，但 `chapters/` 目录存在对应章节文件时，可以读取该文件统计字数，并提取已提供的标题；不要凭空编造情节概况或出场人物。
    - **字数统计**：如果项目根目录有 `count_words.py`，直接运行它；否则按「中文字符 + 英文单词数」统计。
 
-4. **生成更新规则并执行**
-   - 将准备执行的更新整理成 JSON 规则文件（`updates.json`），包含：
-     - `meta_info`：当前章节进度等
-     - `overall_progress`：总体进度勾选项
-     - `chapters`：章节进度表更新
-     - `character_progress`：人物进度勾选项
-     - `foreshadowing.add` / `foreshadowing.resolve`：新增/回收伏笔
-     - `timeline_progress`：时间线进度勾选项
-   - 运行脚本：`python scripts/update_progress.py --input progress.md --spec updates.json`
-   - 该脚本会安全地更新标准区块并保留所有未知内容，输出变更摘要 JSON。
+4. **生成更新规则与预览**
+   - 在临时目录创建 `updates.json`，只包含用户要求或可直接统计的字段：`meta_info`、`overall_progress`、`chapters`、`character_progress`、`foreshadowing.add/resolve`、`timeline_progress`。
+   - `SKILL_DIR` 指本 `SKILL.md` 所在目录。使用 `--output` 写入临时预览文件，禁止首次运行就覆盖原文件：
 
-5. **落盘前检查（硬性门槛）**
+     ```bash
+     python "$SKILL_DIR/scripts/update_progress.py" --input "<项目>/progress.md" --spec "<临时目录>/updates.json" --output "<临时目录>/progress.preview.md"
+     ```
 
-   在确认写回前，逐项核对：
+   - 命令失败、JSON 无效或输入不存在时停止，不写回。伏笔正式登记仍由 `presets/foreshadowing.md` 维护，本步骤只同步进度视图。
 
-   - [ ] 没有根据章节正文脑补情节概况、出场人物或伏笔
-   - [ ] 没有删除或修改用户自定义区块和备注
-   - [ ] 没有擅自新增用户未要求的伏笔行
-   - [ ] 章节进度表的行数与本次更新目标一致
-   - [ ] 复选框和 Markdown 表格语法正确
+5. **检查预览并确认写回（硬性门槛）**
 
-   任何一项不通过，都先向用户说明，而不是直接写回文件。
+   对比原文件和预览文件，逐项核对：
 
-6. **返回更新摘要**
-   - 用 Markdown 返回简洁的变更摘要，包含：
-     - 更新的文件路径
-     - 主要改动（新增/修改了哪些章节、伏笔、进度项）
-     - 当前总体章节数、最新完成章节
-     - 下一步建议（如“可继续写第 X 章”）
+   - [ ] 没有根据正文脑补情节、人物或伏笔
+   - [ ] 没有删除或修改自定义区块和备注
+   - [ ] 没有擅自新增伏笔或覆盖既有摘要
+   - [ ] 更新行数与目标一致，复选框和表格语法正确
+
+   向用户展示变更摘要和将写回的路径，等待明确确认。确认后才可用同一脚本将预览内容写回原文件，或直接保存已核对的预览；任何一项不通过都先修正规则并重新预览。
+
+6. **清理并返回摘要**
+   - 删除本次临时规则、预览和摘要文件，不清理其他文件。
+   - 返回更新路径、章节/伏笔/进度项变化、当前进度和下一步建议；写回失败时保留预览路径供恢复，不宣称已更新。
 
 ## Output Format
 

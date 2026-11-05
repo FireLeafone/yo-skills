@@ -70,6 +70,7 @@
 原则：地理聚类（相近景点同一天）、节奏交替（暴走日后接休闲日）、就近用餐、每天 1–2 小时弹性、到达日只安排入住+周边。
 
 特殊人群：
+
 - 婴幼儿（0–3 岁）：每日最多 2 景点（上下午各 1），13:00–15:00 午睡段不排活动或排车程，标注推车/背带需求，餐厅选有儿童座椅的。
 - 老人：每日步行 <1.5 万步，避免海拔 >3000m，安排午休。
 
@@ -104,6 +105,7 @@
 | 装饰元素 | 建议不同 | 目的地 motif（铁轨虚线、海浪、山水轮廓） |
 
 技术红线：
+
 1. 禁止深层嵌套 JS 模板字符串（复杂拼接用 `+` 或独立函数）；
 2. SVG 图标必须有尺寸约束（外层 `width/height` 容器或自身属性）；
 3. 特殊字符用 Unicode 转义（`·`→`\u00b7`、`°`→`\u00b0`、`¥`→`\u00a5`、`→`→`\u2192`）；
@@ -121,21 +123,24 @@ python assets/generate.py tripData.json "目的地-N天旅行计划.html" \
 
 **tripData 核心结构**：`title/dateRange/travelers/weather{summary,avgHigh,avgLow,rainfall,clothing,tips}/days[{date,weekday,theme,weather{icon,high,low},activities[{time,name,duration,cost,transport,note,imageUrl 或 meal{...}}]}]/hotels[{name,area,pricePerNight,highlights,rating,imageUrl}]/budget{transport,accommodation,food,tickets,other,total,perPerson}/tips[]`。`weather.icon` 可选：`sunny, cloudy, overcast, rainy, stormy, snowy, partlyCloudy`。完整样例见 `assets/roadbook-schema.sample.json`。
 
-## 7. 第七步：部署与诚实声明
+## 7. 第七步：交付与可选部署
 
-- Cloudflare Pages：新文件夹 + 更新 `index.html` 卡片链接（链接去掉 `.html` 后缀，中文目录名直接用）后 `git add/commit/push`，自动部署。构建配置：Build command 留空、输出目录 `/`、Deploy command `exit 0`。
-- 交付时向用户说明数据可靠度：哪些是实查（天气、12306、FlyAI 实时价）、哪些是参考（搜索区间价）、哪些需用户确认（高铁衔接班次、出行前锁价预订）。
+- 默认只交付本地 HTML 和数据可靠度说明，不修改部署仓库，不执行 `git add/commit/push`。
+- 只有用户另行明确要求部署时，才展示目标仓库、部署平台、将修改的文件和 Git 操作并等待确认。Cloudflare Pages 的构建配置可为 Build command 留空、输出目录 `/`、Deploy command `exit 0`，但必须按用户现有项目核对，不能假定。
+- 交付时说明哪些是实查（天气、12306、FlyAI 实时价）、哪些是参考（搜索区间价）、哪些需用户确认（高铁衔接班次、出行前锁价预订）。
 
 ## 8. 附：行程详解文案规范（亮点 / 每日详述底稿）
 
 适用：独立 Markdown 行程详解，或 roadbook `highlights`、`daily` 正文底稿。角色：**资深定制旅行顾问兼行程编辑**——松弛、好读、有度假感，不夸大、不标题党、不胡编景点。
 
 **`# 行程亮点`**（唯一一级标题之一）：
+
 - 至少覆盖游玩体验、住宿特色、美食亮点，可增设交通便利/文化体验/性价比与留白中的 1–2 项；
 - 3–5 条无序列表，每条 1–2 句，合计约 200–300 字；
 - 不写空洞口号，不写与报价矛盾的「全含」「赠送」。
 
 **`# 每日行程详述`**：
+
 - 二级标题 `## Day n：主题简述`（如 `## Day 1：抵达 XX，老城慢行`）；
 - 从核心看点/值得体验/动线建议/停留时长量级/实用贴士中择 3–5 个重点，每日 ≤300 字；
 - 以无序列表为主，关键信息加粗（**预约**、**省力走法**、**闭馆日**）。

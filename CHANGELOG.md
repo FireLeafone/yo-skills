@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.0 (2026-11-05)
+
+- feat: ai update all skills
+- feat: init AGENTS
+
 ## 1.8.0 (2026-11-02)
 
 - feat: ai update novel-create

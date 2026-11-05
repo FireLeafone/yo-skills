@@ -15,8 +15,8 @@ description: >
 
 ## 输出
 
-- 单个自包含 HTML 文件，默认命名为 `<书名>-storyline.html`，输出到当前工作目录（用户可指定路径）。
-- 渲染由模板资产 `assets/character-lines-template.html` 完成，你只需抽取数据、注入模板，**不要重写渲染代码**（除非用户明确要求调整样式）。
+- 单个自包含 HTML 文件，默认命名为 `<书名>-storyline.html`，输出到当前工作目录（用户可指定路径）。目标已存在时先询问覆盖、更新或更换文件名。
+- 渲染由模板资产 `assets/character-lines-template.html` 完成，只需抽取数据并安全注入模板，不重写渲染代码（除非用户明确要求调整样式）。来源不足时只能生成明确标注的节选/演示版，不得补齐虚构情节。
 
 ## 工作流程
 
@@ -54,17 +54,25 @@ description: >
 
 ### 4. 生成 HTML
 
-推荐用小脚本完成注入，避免手写长 JSON 出错：
+用小脚本完成注入，避免手写长 JSON。模板路径从本 `SKILL.md` 所在目录解析；写入前再次检查目标是否存在及用户选择。JSON 必须转义 `</`，防止原文中的 `</script>` 提前结束脚本：
 
 ```bash
 python - <<'EOF'
-import io, json
-tpl = io.open('<本技能目录>/assets/character-lines-template.html', encoding='utf-8').read()
+import json
+from pathlib import Path
+skill_dir = Path('<本技能目录>')
+output = Path('<书名>-storyline.html')
+tpl = (skill_dir / 'assets/character-lines-template.html').read_text(encoding='utf-8')
 data = { ... }  # 抽取好的数据
-html = tpl.replace('__DATA_JSON__', json.dumps(data, ensure_ascii=False, indent=2))
-io.open('<书名>-storyline.html', 'w', encoding='utf-8').write(html)
+payload = json.dumps(data, ensure_ascii=False, indent=2).replace('</', '<\\/')
+html = tpl.replace('__DATA_JSON__', payload)
+if '__DATA_JSON__' in html:
+    raise SystemExit('模板数据占位符替换失败')
+output.write_text(html, encoding='utf-8')
 EOF
 ```
+
+脚本失败或输出仍含占位符时停止交付，不保留看似成功的 HTML。
 
 ## 数据结构（注入 `__DATA_JSON__` 的对象）
 
@@ -93,9 +101,9 @@ EOF
 
 生成后自查再交付：
 
-1. **语法**：抽出 `<script>` 内容跑 `node --check`（注意先用真实数据替换占位符再检查）。
-2. **视觉**：环境中有无头浏览器时截图自查（如 `msedge --headless --screenshot=... --window-size=1600,1000 file:///...`），确认：每条线起点与 `first` 一致、交汇节点处多线确实合拢、图例显隐正常、事件标签没有大面积重叠。
-3. 把文件路径和截图结论一并告知用户。
+1. **数据与语法**：核对人物 id 引用、章节范围和数据来源；抽出真实数据替换后的 `<script>` 内容运行 `node --check`。Node.js 不可用时明确标注未做语法检查。
+2. **视觉**：有浏览器时打开实际 HTML，检查人物线起点、交汇、图例显隐、标签重叠和资源加载；可用无头浏览器时保存截图并查看。没有浏览器时只交付已通过的数据/语法检查，明确写出“未做浏览器视觉验证”。
+3. 报告文件路径、实际执行的检查和未验证项；无截图时不得声称已检查截图或交互。
 
 ## Gotchas
 

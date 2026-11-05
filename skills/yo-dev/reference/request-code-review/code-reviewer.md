@@ -4,8 +4,8 @@
 
 **目的：** 在问题蔓延成更多工作之前，根据要求和代码质量标准审查已完成的工作。
 
-```
-Agent 工具（general-purpose 类型）:
+```text
+当前宿主支持的通用代码审查子代理；不可用时由主会话按本模板审查：
   description: "Review code changes"
   prompt: |
     你是一位高级代码审查者，拥有软件架构、

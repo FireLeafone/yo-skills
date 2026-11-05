@@ -7,10 +7,9 @@ description: 分析代码库并在 `.agents/` 生成 AI 协作文档（AGENTS.md
 
 分析代码库并生成**面向 AI 协作**的项目文档，存放在 `.agents/` 目录（AGENTS.md、rules、skills）。
 
-
 ## 输出结构
 
-```
+```text
 [项目根目录]
 └── .agents/
     ├── AGENTS.md              # Agent 协作文档（主文件）
@@ -29,29 +28,21 @@ description: 分析代码库并在 `.agents/` 生成 AI 协作文档（AGENTS.md
 
 ## 工作流程
 
-### 0. 前置检查
+### 0. 只读前置检查
 
-检查 `.claude/` 和 `.agents/` 状态：
+只检查 `.claude/` 和 `.agents/` 的类型、链接目标与文件清单，不移动、删除或覆盖任何内容：
 
-| 状态 | 处理方式 |
+| 状态 | 后续计划 |
 |------|----------|
-| `.agents/` 已存在 | 直接进入分析流程 |
-| `.claude/` 存在、`.agents/` 不存在 | 迁移 `.claude/` → `.agents/`，再创建软链接 |
-| 两者都不存在 | 创建 `.agents/`，再创建软链接 |
-| `.claude` 已是软链接 → `.agents` | 正常，直接操作 `.agents/` |
+| `.agents/` 已存在 | 保留现状，进入输出范围确认 |
+| `.claude/` 存在、`.agents/` 不存在 | 将迁移和链接方案列入确认清单 |
+| 两者都不存在 | 计划创建 `.agents/`，并询问是否需要 `.claude` 兼容入口 |
+| `.claude` 已链接到 `.agents` | 正常，只操作 `.agents/` |
+| 两者都存在但不是上述链接关系 | 停止并询问，禁止合并或删除 |
 
-**迁移操作**：
-```bash
-# 1. 创建 .agents/ 并迁移内容
-mkdir .agents
-mv .claude/* .agents/ 2>/dev/null || true
+只有用户在 Step 1 明确确认迁移方案后，才可复制 `.claude/` 内容。默认保留原目录；删除原目录或替换现有链接必须再次获得单独确认。任何命令失败都停止迁移并报告，不使用 `rm -rf`、`mv ... || true` 或强制覆盖链接。
 
-# 2. 删除原 .claude/ 目录，创建软链接
-rm -rf .claude
-ln -sf .agents .claude
-```
-
-> **Windows 注意**：目录符号链接需要管理员权限或开发者模式。若失败，保留独立 `.claude/` 目录，仅在其内创建 `CLAUDE.md` → @ 引用文件`.agents/AGENTS.md` 。
+> **Windows 注意**：目录符号链接可能需要开发者模式或额外权限。失败时保留原目录，仅在用户同意后创建 `.claude/CLAUDE.md`，用 `@` 引用 `.agents/AGENTS.md`。
 
 ---
 
@@ -84,17 +75,20 @@ ln -sf .agents .claude
 | **JVM / Java** | `pom.xml`、`build.gradle` / `build.gradle.kts` |
 | **Python** | `pyproject.toml`、`requirements.txt`、`setup.py` |
 
-可选运行辅助脚本快速探测：
+可选运行辅助脚本快速探测。`SKILL_DIR` 指本 `SKILL.md` 所在目录，脚本路径相对该目录解析：
+
 ```bash
-python scripts/analyze_project.py <项目根目录>
+python "$SKILL_DIR/scripts/analyze_project.py" <项目根目录>
 ```
-脚本失败时，手工读取上表中的标记文件。
+
+脚本失败时，手工读取上表中的标记文件。配置分析只提取必要结构，不回显或写入密钥、令牌、密码等敏感值。
 
 ---
 
 ### 3. 读取配置文件
 
 **前端**：
+
 ```bash
 Read package.json
 Read tsconfig.json / jsconfig.json（若存在）
@@ -102,12 +96,14 @@ Read vite.config.* / webpack.config.* / next.config.*（若存在）
 ```
 
 **Java**：
+
 ```bash
 Read pom.xml 或 build.gradle / build.gradle.kts
 Read src/main/resources/application*.yml 或 application*.properties（若存在）
 ```
 
 **Python**：
+
 ```bash
 Read pyproject.toml 或 setup.cfg / setup.py（若存在）
 Read requirements.txt 或 requirements-*.txt 或 Pipfile（若存在）
@@ -152,6 +148,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 **后端**：分层/包约定、异常与校验、日志、API 风格。见 `references/backend-analysis-guide.md`。
 
 提取通用资源（附简短示例）：
+
 - 前端：公共组件、自定义 Hooks、工具函数、常量、TypeScript 类型
 - 后端：可复用模块、配置封装、中间件/过滤器、数据访问层
 
@@ -162,6 +159,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 #### 6.1 AGENTS.md & CLAUDE.md
 
 **AGENTS.md**：
+
 - 使用模板：`assets/agent-template.md`
 - 输出路径：`.agents/AGENTS.md`
 - **定位**：精炼的项目概览与入口文档，**不重复** `rules/` 已覆盖的代码风格、Git 规范等内容
@@ -169,6 +167,7 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 - **无文档时**：按模板填充分析结果，删除不适用章节
 
 **CLAUDE.md**：
+
 - 输出路径：`.agents/CLAUDE.md`
 - **定位**：Claude Code 兼容入口，内容与 AGENTS.md 一致
 - **实现**：`.agents/CLAUDE.md` → @ 引用 `.agents/AGENTS.md`
@@ -203,19 +202,19 @@ Glob: "tests/**/*.py" 或 "**/test_*.py"
 
 ---
 
-### 7. 创建 `.claude` 软链接
+### 7. 创建 `.claude` 兼容入口
 
-完成文档生成后，确保 `.claude` 正确指向 `.agents`：
+只有用户在 Step 1 选择该入口且目标路径不存在时，才创建链接；已有普通目录、文件或不同目标的链接均不得替换：
 
 ```bash
 # Unix / macOS
-ln -sf .agents .claude
+ln -s .agents .claude
 
 # Windows PowerShell
 New-Item -ItemType SymbolicLink -Path .claude -Target .agents
 ```
 
-若环境无权限创建目录软链接：提示获取管理员权限，再创建
+若环境无权限创建目录链接，不提升权限、不反复尝试。报告原因，并在用户同意后使用独立 `.claude/CLAUDE.md` 引用 `.agents/AGENTS.md` 作为降级方案。
 
 ---
 
@@ -224,6 +223,7 @@ New-Item -ItemType SymbolicLink -Path .claude -Target .agents
 ### AGENTS.md
 
 精炼的项目概览与入口文档，聚焦 Agent 快速理解项目所需的核心信息：
+
 - 项目背景、技术栈、环境配置、常用命令、项目主要架构
 - 引用 `.agents/rules/`（不在 AGENTS.md 中重复 rules 已覆盖的代码风格、Git 规范等）
 
@@ -234,6 +234,7 @@ New-Item -ItemType SymbolicLink -Path .claude -Target .agents
 ### Rules
 
 每条规则应具备：
+
 - **Scope**：适用场景（文件类型、目录范围）
 - **Rule**：具体约定（必须/禁止/推荐）
 - **Example**：正例/反例代码片段
@@ -242,6 +243,7 @@ New-Item -ItemType SymbolicLink -Path .claude -Target .agents
 ### Skills
 
 每个 skill 应具备：
+
 - 标准 frontmatter（`name`、`description`）
 - 明确的工作流程
 - 与该项目技术栈强相关的具体步骤
@@ -251,8 +253,8 @@ New-Item -ItemType SymbolicLink -Path .claude -Target .agents
 
 ## Gotchas
 
-1. **Windows 软链接权限**：目录符号链接在 Windows 默认需要管理员权限。优先尝试，失败时降级为文件级软链接方案。
-2. **已有 `.claude/` 内容迁移**：迁移前先确认 `.claude/` 内文件清单，避免误删用户的 settings.json 等配置。建议先复制再删除。
+1. **Windows 链接权限**：目录链接可能需要额外权限。只尝试一次非强制创建；失败时报告，并经用户同意后使用独立 `.claude/CLAUDE.md` 降级。
+2. **已有 `.claude/` 内容迁移**：先确认文件清单和复制目标，默认保留原目录。不得删除 `settings.json` 或任何既有内容；删除和替换必须单独确认。
 3. **全栈项目易遗漏**：同时有 `package.json` 和 `pom.xml`/`build.gradle` 时，模型容易只分析前端。必须分别扫描两套入口，文档中分「前端 / 后端」两节。
 4. **更新时覆盖历史信息**：已有 `AGENTS.md` 中的「已知坑」「特定配置说明」等历史沉淀，更新前必须先读取并保留，只覆盖分析结果会变化的部分。
 5. **Rules 不要写通用常识**：如「React 组件用大驼峰」「Java 类名用大驼峰」等通用知识不应写入 rules。只写该项目特有的、从代码库中提炼出的约定。
