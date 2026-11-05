@@ -2,9 +2,9 @@
 /**
  * Critique persistence helper.
  *
- * Each run of /yo-ui critique writes a per-target snapshot to
+ * After user confirmation, /yo-ui critique can write a per-target snapshot to
  *   docs/yo-ui/critique/<YYYY-MM-DD>__<slug>.md
- * with a small YAML frontmatter carrying the score + P0/P1 counts.
+ * with YAML frontmatter carrying available scores and P0/P1 counts.
  *
  * /yo-ui polish reads the latest matching snapshot at start as its
  * fix backlog. No other skill auto-reads critique output.
@@ -28,7 +28,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { getCritiqueDir } from './yo-ui-paths.mjs';
+import { getCritiqueDir } from './yo-ui-path.mjs';
 
 const SLUG_MAX = 50;
 

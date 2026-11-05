@@ -4,7 +4,7 @@
 用法：
     python3 presets/check_dialogue_density.py                          # 递归扫描 chapters/ 下所有章节
     python3 presets/check_dialogue_density.py chapters/volume-01/021_章节名.md ...
-    python3 presets/check_dialogue_density.py --min 3000 --max 4000 chapters/volume-01/
+    python3 presets/check_dialogue_density.py --min 3000 --max 5000 chapters/volume-01/
 
 判定口径（与 checked.md 一致）：
     字数：CJK 字符 + 英文单词（同 count_words.py）
@@ -70,6 +70,10 @@ def collect(paths: list[str]) -> list[Path]:
 
 
 def main() -> int:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+
     parser = argparse.ArgumentParser(description="章节字数与对话密度检查")
     parser.add_argument("paths", nargs="*", help="章节文件或目录（默认递归扫描 chapters/）")
     parser.add_argument("--min", type=int, default=3000, help="单章字数下限（默认 3000）")

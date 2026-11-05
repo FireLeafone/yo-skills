@@ -2,7 +2,7 @@
   {
     "id": 1,
     "prompt": "帮我写第三章",
-    "expected": "读取 outline/progress/上一章，确认章节方向与风格后输出 2000-4000 字正文，保存到 chapters/003-xxx.md，并更新 progress.md"
+    "expected": "读取 outline/progress/上一章，确认章节方向与风格后输出 3000-5000 字正文，保存到 chapters/003-xxx.md，并更新 progress.md"
   },
   {
     "id": 2,

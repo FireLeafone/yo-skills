@@ -67,17 +67,21 @@ git rev-parse --show-superproject-working-tree 2>/dev/null
 1. **检查指令中是否声明了 worktree 目录偏好。** 如果用户已指定，直接使用，无需询问。
 
 2. **检查是否存在项目本地 worktree 目录：**
+
    ```bash
    ls -d .worktrees 2>/dev/null     # 优先（隐藏）
    ls -d worktrees 2>/dev/null      # 备选
    ```
+
    如果找到，使用它。如果两者都存在，`.worktrees` 优先。
 
 3. **检查是否存在全局目录：**
+
    ```bash
    project=$(basename "$(git rev-parse --show-toplevel)")
    ls -d ~/.config/yo/worktrees/$project 2>/dev/null
    ```
+
    如果找到，使用它（与遗留全局路径向后兼容）。
 
 4. **如果没有其他指引可用**，默认使用项目根目录下的 `.worktrees/`。
@@ -90,9 +94,9 @@ git rev-parse --show-superproject-working-tree 2>/dev/null
 git check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/dev/null
 ```
 
-**如果未被忽略：** 添加到 .gitignore，提交更改，然后继续。
+**如果未被忽略：** 停止创建，向用户说明风险。用户同意修改 `.gitignore` 后再追加规则；不要自动提交。若用户不希望修改 `.gitignore`，改用已获认可的项目外目录。
 
-**为何关键：** 防止意外将 worktree 内容提交到仓库。
+**为何关键：** 防止意外将 worktree 内容提交到仓库，同时避免为了创建工作区而产生未经请求的提交。
 
 全局目录（`~/.config/yo/worktrees/`）无需验证。
 
@@ -113,41 +117,25 @@ cd "$path"
 
 ## 第 3 步：项目设置
 
-自动检测并运行适当的设置：
+先读取项目文档、包管理器清单和锁文件，只使用项目已经声明的工具与命令。不要仅凭存在 `pyproject.toml` 就假定使用 Poetry，也不要把 npm 当成所有 Node 项目的默认包管理器。
 
-```bash
-# Node.js
-if [ -f package.json ]; then npm install; fi
-
-# Rust
-if [ -f Cargo.toml ]; then cargo build; fi
-
-# Python
-if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-if [ -f pyproject.toml ]; then poetry install; fi
-
-# Go
-if [ -f go.mod ]; then go mod download; fi
-```
+- 安装会修改环境或锁文件前，说明命令和影响；优先使用项目文档的既定安装命令。
+- 依赖已在共享环境可用时，可跳过重复安装并记录验证方式。
+- 缺少项目声明的工具或安装失败时停止设置并报告，不擅自更换包管理器或全局安装。
 
 ## 第 4 步：验证干净基线
 
-运行测试确保工作区以干净状态启动：
+运行项目实际声明且适用于本次工作的测试或检查命令；不存在测试时运行可用的静态检查，并明确说明没有测试，不编造测试数量。
 
-```bash
-# 使用项目适用的命令
-npm test / cargo test / pytest / go test ./...
-```
+**如果检查失败：** 记录为既有基线问题，报告失败并询问是否继续或调查。
 
-**如果测试失败：** 报告失败，询问是否继续或调查。
-
-**如果测试通过：** 报告就绪。
+**如果检查通过：** 报告实际命令和结果。
 
 ### 报告
 
-```
+```text
 Worktree 已就绪，位于 <完整路径>
-测试通过（<N> 个测试，0 个失败）
+基线验证：<实际命令及结果；未运行的项目明确标注>
 准备实现 <功能名称>
 ```
 
@@ -164,10 +152,10 @@ Worktree 已就绪，位于 <完整路径>
 | 两者都存在 | 使用 `.worktrees/` |
 | 都不存在 | 检查指令文件，然后默认 `.worktrees/` |
 | 全局路径存在 | 使用它（向后兼容） |
-| 目录未被忽略 | 添加到 .gitignore + 提交 |
-| 创建时权限错误 | 沙箱回退，原地工作 |
-| 基线测试期间测试失败 | 报告失败 + 询问 |
-| 无 package.json/Cargo.toml | 跳过依赖安装 |
+| 目录未被忽略 | 暂停；经同意后修改 .gitignore，不自动提交 |
+| 创建时权限错误 | 报告原因，经用户同意后原地工作 |
+| 基线检查失败 | 报告失败 + 询问 |
+| 无依赖清单 | 跳过依赖安装并说明 |
 
 ## 常见错误
 
@@ -199,17 +187,19 @@ Worktree 已就绪，位于 <完整路径>
 ## 红旗警示
 
 **绝不：**
+
 - 当第 0 步检测到现有隔离时创建 worktree
-- 当你有原生工作树工具（如 `EnterWorktree`）时使用 `git worktree add`。这是 #1 错误 — 如果你有它，就用它。
-- 跳过第 1a 步直接跳到第 1b 步的 git 命令
-- 创建 worktree 前未验证其已被忽略（项目本地）
-- 跳过基线测试验证
-- 未经询问就在测试失败时继续
+- 有原生工作树工具时绕过它使用 `git worktree add`
+- 未经同意修改 `.gitignore`、提交、推送或全局安装依赖
+- 创建项目本地 worktree 前未验证忽略规则
+- 没有任何测试时编造通过结果
+- 未经询问就在基线检查失败时继续
 
 **始终：**
+
 - 先运行第 0 步检测
-- 优先使用原生工具而非 git 回退
-- 遵循目录优先级：现有 > 全局遗留 > 指令文件 > 默认
+- 优先使用原生工具而非 Git 回退
+- 遵循目录优先级：用户指定 > 项目现有 > 全局遗留 > 默认
 - 验证项目本地目录是否被忽略
-- 自动检测并运行项目设置
-- 验证干净测试基线
+- 按项目文档、清单和锁文件选择设置命令
+- 运行实际存在的基线检查并报告未覆盖项

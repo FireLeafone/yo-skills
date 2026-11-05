@@ -390,16 +390,9 @@ EXPLAIN_BOOK_ROOT="<本SKILL.md所在目录>"
 
 ## Step 10 — 清理与报告
 
-清理提取工作目录（保留 `EXPLAIN_BOOK_WORKDIR` 覆盖语义；只删该目录，不碰其他路径）：
+清理提取工作目录前，先解析其真实路径并确认目录名为 `explain_book_work`；若用户自定义了其他 `EXPLAIN_BOOK_WORKDIR`，只清理本次提取实际创建的子目录，不删除整个自定义目录。路径为空、为文件系统根目录或无法确认归属时停止清理并报告。不要对未校验变量直接使用 `rm -rf`。
 
-```bash
-if [ -z "$EXPLAIN_BOOK_WORKDIR" ]; then
-  PYTHON_BIN="${PYTHON_BIN:-python3}"
-  command -v "$PYTHON_BIN" >/dev/null 2>&1 || PYTHON_BIN="python"
-  EXPLAIN_BOOK_WORKDIR="$("$PYTHON_BIN" -c 'import os,tempfile;print(os.path.join(tempfile.gettempdir(),"explain_book_work"))')"
-fi
-rm -rf "$EXPLAIN_BOOK_WORKDIR"
-```
+清理失败不影响已生成文档集，但最终报告必须列出未清理的具体路径。
 
 然后向用户报告：
 

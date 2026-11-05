@@ -54,13 +54,13 @@ description: 分析代码库（前端 Node/React/Vue 或后端 Java/Python），
 | **JVM / Java** | `pom.xml`、`build.gradle` / `build.gradle.kts` |
 | **Python** | `pyproject.toml`、`requirements.txt`、`setup.py` |
 
-可选运行辅助脚本快速探测：
+可选运行辅助脚本快速探测。`SKILL_DIR` 指本 `SKILL.md` 所在目录，命令中的脚本路径必须相对该目录解析，不依赖用户当前工作目录：
 
 ```bash
-python scripts/analyze_project.py <项目根目录>
+python "$SKILL_DIR/scripts/analyze_project.py" <项目根目录>
 ```
 
-脚本失败时，手工读取上表中的标记文件。
+脚本失败时，手工读取上表中的标记文件。读取应用配置时只提取文档所需结构，不回显或写入密钥、令牌、密码等敏感值。
 
 ---
 
