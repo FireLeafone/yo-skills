@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.1 (2026-11-07)
+
+- feat: novel-style upgrade
+- feat: novel-style upgrade
+
 ## 1.9.0 (2026-11-05)
 
 - feat: ai update all skills
