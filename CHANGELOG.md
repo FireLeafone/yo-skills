@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.2 (2026-11-18)
+
+- feat: optimizer novel skill
+
 ## 1.9.1 (2026-11-07)
 
 - feat: novel-style upgrade
