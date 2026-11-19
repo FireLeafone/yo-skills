@@ -18,9 +18,9 @@ Yo-Novel 是多个小说编写辅助技能的集合入口。根据你的需求�
 | 子技能 | 路径 | 用途 | 典型触发语 |
 |--------|------|------|-----------|
 | novel-create | `reference/novel-create/SKILL.md` | 初始化小说项目骨架，并支持动笔前的设计规划（大纲、世界观、人物、主题） | "我想写本小说"、"新建小说项目"、"设计小说"、"写大纲"、"世界观设定"、"人物设定"、"novel design" |
-| novel-character | `reference/novel-character/SKILL.md` | 主角与群像设计：主角性格标签、配角功能模型、反派魅力塑造、人物关系网络、人物弧光规划 | "设计主角"、"主角性格"、"塑造配角"、"反派塑造"、"人物弧光"、"群像设计"、"角色扁平" |
+| novel-character | `reference/novel-character/SKILL.md` | 主角与群像设计：主角性格标签、配角功能模型、反派魅力塑造、人物关系网络、人物弧光规划、能力等级职位与工具的成长线设计 | "设计主角"、"主角性格"、"塑造配角"、"反派塑造"、"人物弧光"、"群像设计"、"角色扁平"、"人物能力"、"等级成长"、"人物成长线" |
 | novel-write | `reference/novel-write/SKILL.md` | 基于大纲与设定撰写或续写小说章节正文 | "写第 X 章"、"续写小说"、"开始写正文"、"novel chapter"、"write chapter" |
-| novel-chapters | `reference/novel-chapters/SKILL.md` | 按卷规划小说章节：主题、说明、人物、阶段章节划分与伏笔清单 | "分卷"、"章节规划"、"卷规划"、"划分章节"、"按卷写大纲" |
+| novel-chapters | `reference/novel-chapters/SKILL.md` | 按卷规划小说章节：主题、人物、阶段章节划分（标注情节类型与节奏强度）、情节配比与节奏曲线、伏笔计划 | "分卷"、"章节规划"、"卷规划"、"划分章节"、"按卷写大纲" |
 | novel-progress | `reference/novel-progress/SKILL.md` | 更新 `progress.md` 进度追踪表（章节、人物、时间线、伏笔） | "更新进度"、"progress.md"、"写完第 X 章"、"标记大纲完成"、"新增伏笔" |
 | novel-style | `reference/novel-style/SKILL.md` | 从一本已有小说逆向提取可执行的写作手册：执行卡 + 人物声纹 + 场景配方 + 写时自检，输出 【书名】-style-skill.md | "提取 XX 小说的写作风格"、"分析 XX 文风"、"仿写 XX 风格"、"生成 XX 风格指南"、"XX 风格 skill"、"novel style guide"、"写作风格执行手册" |
 | novel-storyline | `reference/novel-storyline/SKILL.md` | 把小说/书籍/文章总结为 Git 分支式"人物进程图"交互 HTML：人物彩色进程线 + 事件节点 + 交汇分开 + 时间轴 + 图例显隐 | "人物进程图"、"人物情节线"、"故事线可视化"、"把小说画成图"、"总结小说人物线"、"人物命运走向" |
